@@ -16,34 +16,32 @@ Customers message your **personal Telegram account** in any language. LingoDesk 
 
 ## Two ways to run it
 
-1. **Self-host** — free and open source. Follow the quick start below, or the fully illustrated [step-by-step guide](https://lingodesk.org/setup/) (~15 minutes).
-2. **Hosted by us** — don't want to run a server? We operate it for you: [hello@lingodesk.org](mailto:hello@lingodesk.org?subject=LingoDesk%20hosted).
+1. **Cloud-hosted (default — no server, no code)**: do the Telegram-side setup from your phone and send us your bot token; we run everything, translation engine included. Follow the illustrated [setup guide](https://lingodesk.org/setup/) (~10 minutes). Free during beta.
+2. **Self-host** — free and open source, quick start below.
 
-## Requirements
+## Self-host requirements
 
-- **Telegram Premium** (Telegram Business relay is Premium-only — hard requirement)
+- **Telegram Premium** (Telegram Business relay is Premium-only — hard requirement for both modes)
 - Node.js ≥ 20 (or Docker)
 - An Anthropic API key (plus an optional OpenAI key as fallback)
 
-## Quick start
+## Quick start (self-host)
+
+1. Create a bot with [@BotFather](https://t.me/BotFather) (`/newbot`), then in *Bot Settings* turn **Business Mode on** and **Group Privacy off**.
+2. Phone → Settings → **Telegram Business** → **Chatbots** → link your bot with the *Reply to messages* permission.
+3. Create a group with the bot, enable **Topics**, promote the bot to admin with **Manage Topics**.
+4. Then:
 
 ```bash
 git clone https://github.com/sanxiaozi/lingodesk.git
 cd lingodesk
 npm install
-cp .env.example .env
+cp .env.example .env   # only BOT_TOKEN and ANTHROPIC_API_KEY are required
+npm run db:push        # initialize SQLite (first run only)
+npm run start          # or: npm run dev (hot reload)
 ```
 
-1. Create a bot with [@BotFather](https://t.me/BotFather) (`/newbot`), then in *Bot Settings* turn **Business Mode on** and **Group Privacy off**.
-2. Phone → Settings → **Telegram Business** → **Chatbots** → link your bot with the *Reply to messages* permission.
-3. Create a group with the bot, enable **Topics**, promote the bot to admin with **Manage Topics**.
-4. Put `BOT_TOKEN` into `.env`, post one message in the group, DM the bot `/start` from your account, then run `npm run ids` — it prints `FORUM_CHAT_ID` and `OWNER_USER_ID`.
-5. Complete `.env` (add `ANTHROPIC_API_KEY`), then:
-
-```bash
-npm run db:push   # initialize SQLite (first run only)
-npm run start     # or: npm run dev (hot reload)
-```
+5. Send `/bind` in your console group — the group ID and your user ID are detected automatically, nothing to look up.
 
 Stuck anywhere? The [illustrated guide](https://lingodesk.org/setup/) covers every screen and every known pitfall.
 

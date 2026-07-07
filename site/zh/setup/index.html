@@ -108,7 +108,7 @@
 
   <div class="hero">
     <h1>快速上手:从零到跑通,一步不落</h1>
-    <p>照着做即可,全程约 15 分钟。每一步都标注了在哪个界面点什么,以及最容易踩的坑。</p>
+    <p>默认走<strong>云托管</strong>:只需一部手机、约 10 分钟,<strong>不需要服务器、不需要写代码</strong>。每一步都标注了在哪个界面点什么,以及最容易踩的坑。</p>
   </div>
 
   <div class="toc">
@@ -117,10 +117,8 @@
     <a href="#s1">第 1 步 · 在 BotFather 创建 bot(含两个关键开关)</a>
     <a href="#s2">第 2 步 · 在 Telegram Business 里绑定 bot</a>
     <a href="#s3">第 3 步 · 创建控制台论坛群</a>
-    <a href="#s4">第 4 步 · 获取三个 ID / Key</a>
-    <a href="#s5">第 5 步 · 填写 .env</a>
-    <a href="#s6">第 6 步 · 启动</a>
-    <a href="#s7">第 7 步 · 试聊验证</a>
+    <a href="#s4">第 4 步 · 二选一:☁️ 云托管(推荐) / 💻 自托管</a>
+    <a href="#s7">第 5 步 · 试聊验证</a>
     <a href="#faq">常见问题排查</a>
   </div>
 
@@ -128,10 +126,8 @@
     <h2>🧾 准备清单</h2>
     <ul>
       <li><strong>Telegram Premium 会员</strong> —— Telegram Business 功能(消息回灌给 bot)是 Premium 专属,<strong>没有 Premium 整套流程无法工作</strong>。</li>
-      <li><strong>Node.js 20 或更高</strong> —— 终端跑 <code>node -v</code> 确认;没有就去 nodejs.org 装 LTS 版。</li>
-      <li><strong>Anthropic API Key</strong> —— 翻译引擎。第 4 步教你申请;可选再备一个 OpenAI Key 做兜底。</li>
-      <li><strong>LingoDesk 代码</strong> —— 免费开源,托管在 <a href="https://github.com/sanxiaozi/lingodesk" style="color:var(--accent)">GitHub</a>,第 4b 步一条命令克隆。</li>
-      <li><strong>一台常开的电脑</strong> —— bot 进程要一直跑着才能收发(后面可迁到服务器)。</li>
+      <li><strong>一部手机</strong> —— 云托管模式(默认)只需要这个:第 1–3 步在手机上完成,把 token 发给我们就开通。</li>
+      <li><strong>仅自托管需要</strong>:Node.js ≥ 20(或 Docker)、Anthropic API Key、一台常开的电脑/服务器。代码免费开源在 <a href="https://github.com/sanxiaozi/lingodesk" style="color:var(--accent)">GitHub</a>。</li>
     </ul>
   </section>
 
@@ -203,71 +199,32 @@
   </section>
 
   <section class="step" id="s4">
-    <h2><span class="n">4</span>获取三个 ID / Key</h2>
+    <h2><span class="n">4</span>二选一:☁️ 云托管 或 💻 自托管</h2>
+    <p>到这里,手机上的准备已全部完成。接下来选一条路——<strong>没有服务器就选 A,什么都不用装</strong>。</p>
 
-    <h3>4a. ANTHROPIC_API_KEY(翻译引擎)</h3>
+    <h3>☁️ 方式 A · 云托管(推荐:无需服务器、无需代码)</h3>
     <ol>
-      <li>打开 <code>console.anthropic.com</code>,注册/登录。</li>
-      <li>左侧 <strong>API Keys</strong> → <strong>Create Key</strong> → 复制那串 <code>sk-ant-…</code>(只显示一次,存好)。</li>
-      <li>Billing 里充值几美元即可——默认用 Haiku 模型,一条译文成本约 $0.001,几美元够用很久。</li>
+      <li>把第 1 步拿到的 <strong>BOT_TOKEN</strong> 发给我们:<a href="mailto:hello@lingodesk.org?subject=LingoDesk%20%E4%BA%91%E6%89%98%E7%AE%A1%E5%BC%80%E9%80%9A&body=BOT_TOKEN%EF%BC%9A%EF%BC%88%E7%B2%98%E8%B4%B4%E5%9C%A8%E8%BF%99%E9%87%8C%EF%BC%89%0A%E6%88%91%E7%9A%84%20Telegram%20%E7%94%A8%E6%88%B7%E5%90%8D%EF%BC%9A%40" style="color:var(--accent)"><strong>点此一键生成开通邮件</strong></a>(模板已备好,粘贴 token 发送即可)。</li>
+      <li>我们在 <strong>24 小时内</strong>为你开通并邮件回复确认。内测期<strong>免费</strong>,翻译引擎也由我们提供,不用申请任何 API Key。</li>
+      <li>收到确认后,在你的<strong>控制台群</strong>里发一句 <code>/bind</code> —— bot 回复「✅ 已绑定」,全部完成,直接跳到第 5 步试聊。</li>
     </ol>
+    <div class="callout ok">担心 token 交出去不安全?token 只被用于收发你在 Business 里授权的会话;你随时可以在 BotFather 里(/mybots → API Token → Revoke)重置它,旧 token 立即失效,主动权始终在你手里。</div>
 
-    <h3>4b. 先把代码跑起来第一步:装依赖 + 填 BOT_TOKEN</h3>
-    <p>终端进入 LingoDesk 目录:</p>
+    <h3>💻 方式 B · 自托管(自己的电脑/服务器,数据完全自持)</h3>
+    <p>先去 <code>console.anthropic.com</code> → <strong>API Keys</strong> → <strong>Create Key</strong> 拿一个 <code>sk-ant-…</code>(翻译引擎;Billing 充几美元,一条译文约 $0.001,够用很久)。然后:</p>
     <div class="term"><span class="cmd">git clone https://github.com/sanxiaozi/lingodesk.git</span>
 <span class="cmd">cd lingodesk</span>
 <span class="cmd">npm install</span>
-<span class="cmd">cp .env.example .env</span></div>
-    <p>用任意编辑器打开 <code>.env</code>,先只填一行:<code>BOT_TOKEN=第 1 步拿到的 token</code>,保存。</p>
-
-    <h3>4c. FORUM_CHAT_ID 和 OWNER_USER_ID:一条命令拿到</h3>
-    <ol>
-      <li>在<strong>控制台群</strong>里随便发一句(比如「测试」)。</li>
-      <li>用<strong>你自己的账号</strong>私聊 bot(搜它 username),发一句 <code>/start</code>。</li>
-      <li>回到终端:</li>
-    </ol>
-    <div class="term"><span class="cmd">npm run ids</span>
-<span class="out">── 群/会话(supergroup 且 -100 开头的那行 = FORUM_CHAT_ID)──</span>
-<span class="out">  <span class="hl">-1002345678901</span>  supergroup · LingoDesk 控制台</span>
-<span class="out">── 用户(你自己那行 = OWNER_USER_ID)──</span>
-<span class="out">  <span class="hl">712345678</span>  Jason @your_username</span></div>
-    <div class="callout ok">两个高亮的数字就是要填的值。如果输出是「(空)」,说明那两条消息还没发,发完重跑;如果报 409,说明 bot 正在运行,先停掉再跑。</div>
-  </section>
-
-  <section class="step" id="s5">
-    <h2><span class="n">5</span>填写 .env</h2>
-    <p>把 <code>.env</code> 填完整(其余行保持默认即可):</p>
-    <div class="term"><span class="out"># 必填四项</span>
-BOT_TOKEN=<span class="hl">8123456789:AAHfK3xxxxxxxxxxxxxxxxxxxxxxxxx</span>
-FORUM_CHAT_ID=<span class="hl">-1002345678901</span>
-OWNER_USER_ID=<span class="hl">712345678</span>
-ANTHROPIC_API_KEY=<span class="hl">sk-ant-xxxxxxxxxxxxxxxx</span>
-
-<span class="out"># 可选:OpenAI 兜底(Claude 偶发故障时自动切换,建议填)</span>
-OPENAI_API_KEY=sk-xxxxxxxx</div>
-    <ul>
-      <li><code>FORUM_CHAT_ID</code> 带负号,<strong>整串照抄</strong>(包括 <code>-100</code> 前缀)。</li>
-      <li><code>OWNER_USER_ID</code> 一定要填:bot 靠它区分「客户发来的」和「你自己手动回的」,不填会把你的手动回复当客户消息处理。</li>
-    </ul>
-  </section>
-
-  <section class="step" id="s6">
-    <h2><span class="n">6</span>启动</h2>
-    <div class="term"><span class="cmd">npm run db:push</span>
-<span class="out">🚀 Your database is now in sync with your Prisma schema.</span>
+<span class="cmd">cp .env.example .env</span>   <span class="out"># 打开 .env,只需填 BOT_TOKEN 和 ANTHROPIC_API_KEY 两行</span>
+<span class="cmd">npm run db:push</span>        <span class="out"># 初始化数据库(仅首次)</span>
 <span class="cmd">npm run dev</span>
-<span class="out">────────────────────────────────────────</span>
-<span class="out">🚀 LingoDesk 已启动,bot = @my_lingodesk_bot</span>
-<span class="out">   收→译→回→译 跨语言沟通中继:</span>
-<span class="out">   · 客户私聊你真人号 → 自动译中 + 在控制台 Topic 弹双语卡片</span>
-<span class="out">   · 你在 Topic 内打中文 → 预览确认 → 译客户语,以你名义发出</span>
-<span class="out">────────────────────────────────────────</span></div>
-    <p>看到这个横幅就说明起来了。第一次跑 <code>db:push</code> 是初始化本地数据库,以后不用再跑。</p>
-    <div class="callout warn">同一个 bot token <strong>全球只能有一个实例在跑</strong>。如果报 <code>409 Conflict</code>,说明还有另一个进程占着(比如上次没关干净),全部停掉再启动。</div>
+<span class="out">🚀 LingoDesk 已启动,bot = @my_lingodesk_bot</span></div>
+    <p>看到启动横幅后,在<strong>控制台群</strong>里发一句 <code>/bind</code> 完成绑定(群 ID、你的用户 ID 全部自动识别,<strong>不用再查任何数字</strong>)。服务器上推荐 Docker:<code>docker compose up -d</code>,详见 <a href="https://github.com/sanxiaozi/lingodesk" style="color:var(--accent)">GitHub README</a>。</p>
+    <div class="callout warn">同一个 bot token <strong>全球只能有一个实例在跑</strong>(报 <code>409 Conflict</code> = 有旧进程没停)。已开通云托管的话,就不要再自己启动本地实例。</div>
   </section>
 
   <section class="step" id="s7">
-    <h2><span class="n">7</span>试聊验证</h2>
+    <h2><span class="n">5</span>试聊验证</h2>
     <p>找一个<strong>别的 Telegram 账号</strong>(小号或朋友),用外语私聊<strong>你的真人号</strong>(不是私聊 bot!),比如发一句西语「Hola, ¿cuánto cuesta?」。控制台群里应该几秒内弹出一个以对方命名的新话题:</p>
     <div class="chat">
       <div class="title">📋 LingoDesk 控制台 · 话题:@amigo_es</div>
@@ -287,7 +244,15 @@ OPENAI_API_KEY=sk-xxxxxxxx</div>
     <h2>🔧 常见问题排查</h2>
     <details>
       <summary>客户发消息了,控制台群什么都不弹</summary>
-      <p>按顺序检查:① BotFather 里 Business Mode 是否 Turn on(第 1a 步);② Telegram Business → Chatbots 是否绑定了 bot、该聊天是否在覆盖范围内(第 2 步);③ bot 是否是群管理员且有「管理话题」权限(第 3 步);④ 终端里 bot 是否还在跑、有无报错。</p>
+      <p>按顺序检查:① BotFather 里 Business Mode 是否 Turn on(第 1a 步);② Telegram Business → Chatbots 是否绑定了 bot、该聊天是否在覆盖范围内(第 2 步);③ bot 是否是群管理员且有「管理话题」权限(第 3 步);④ 控制台群是否已绑定 —— 在群里发一句 <code>/bind</code>;⑤ 自托管用户:终端里 bot 是否还在跑、有无报错。</p>
+    </details>
+    <details>
+      <summary>在群里发 /bind,bot 没反应</summary>
+      <p>① Group Privacy 没关(第 1b 步),关掉后把 bot 踢出群重新拉进来;② 群还没开启「话题(Topics)」;③ 云托管用户:确认已收到我们的开通邮件(开通前 bot 还没运行);④ 自托管用户:确认终端里 bot 正在运行。</p>
+    </details>
+    <details>
+      <summary>云托管要交出 BOT_TOKEN,安全吗?</summary>
+      <p>token 只被用来收发你在 Telegram Business 里授权范围内的会话,你也可以把私人联系人加入排除列表(第 2 步)。主动权在你:任何时候去 BotFather → /mybots → API Token → <strong>Revoke</strong> 重置,旧 token 立即失效,服务即刻中断。停用前发邮件告知一声即可。</p>
     </details>
     <details>
       <summary>我在话题里打中文,bot 没反应</summary>

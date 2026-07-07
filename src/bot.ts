@@ -1,6 +1,9 @@
 /**
  * LingoDesk 核心中继:收→译→回→译。
  *
+ * 零配置绑定:控制台群无需填 chat_id —— bot 被拉进开启话题的群时自动绑定,
+ * 或在群里发 /bind 手动绑定/换绑;owner user.id 从 business_connection 自动捕获。
+ *
  * 入站(客户私聊你的真人号,经 Telegram Business 回灌):
  *   · 你手动回复回灌 → 存档,并取消该客户待发的开场白
  *   · 表情(贴纸/纯 emoji)→ 显示具体表情;新客户未破冰则安排延迟自动开场白
@@ -33,14 +36,29 @@ export const bot = new Bot(config.botToken);
 
 let connectionId: string | undefined = config.businessConnId;
 let ownerUserId: number | undefined = config.ownerUserId;
+let forumChatId: number | undefined = config.forumChatId;
 
-/** 启动时从 DB 恢复上次有效的 connection_id/owner(防 restart 后用 .env 失效旧值) */
+/** 启动时从 DB 恢复运行时状态(.env 显式配置优先) */
 export async function loadSavedState(): Promise<void> {
   const c = await getAppState("connectionId");
   if (c) connectionId = c;
   const o = await getAppState("ownerUserId");
   if (o) ownerUserId = Number(o);
+  if (!forumChatId) {
+    const f = await getAppState("forumChatId");
+    if (f) forumChatId = Number(f);
+  }
 }
+
+/** 绑定控制台论坛群并持久化 */
+async function bindForum(chatId: number): Promise<void> {
+  forumChatId = chatId;
+  await setAppState("forumChatId", String(chatId)).catch(() => {});
+  console.log(`📌 已绑定控制台论坛群:${chatId}`);
+}
+
+const BIND_OK =
+  "✅ 本群已绑定为 LingoDesk 控制台。\n客户私聊你的真人号时,这里会自动弹出专属话题和双语卡片;你在话题里打中文即可回复。";
 
 const displayName = (from?: { username?: string; first_name?: string; id?: number }): string =>
   from?.username ? `@${from.username}` : (from?.first_name ?? `用户${from?.id ?? "?"}`);
@@ -92,7 +110,7 @@ function cancelGreeting(customerId: string): void {
   }
 }
 
-function scheduleGreeting(customerId: string, chatId: string, threadId: number, connId?: string): void {
+function scheduleGreeting(customerId: string, chatId: string, forum: number, threadId: number, connId?: string): void {
   cancelGreeting(customerId);
   const timer = setTimeout(async () => {
     greetTimers.delete(customerId);
@@ -103,11 +121,9 @@ function scheduleGreeting(customerId: string, chatId: string, threadId: number, 
       if (!conn) return;
       const g = config.greeting;
       await bot.api.sendMessage(Number(chatId), g, { business_connection_id: conn });
-      await bot.api.sendMessage(
-        config.forumChatId,
-        `🤖 [${Math.round(config.greetDelayMs / 1000)}s 自动开场白] ${g}`,
-        { message_thread_id: threadId },
-      );
+      await bot.api.sendMessage(forum, `🤖 [${Math.round(config.greetDelayMs / 1000)}s 自动开场白] ${g}`, {
+        message_thread_id: threadId,
+      });
       await markGreeted(customerId);
       await logMessage({ contactId: customerId, direction: "out", originalText: g, zhText: "[自动开场白]" });
     } catch (e) {
@@ -140,6 +156,22 @@ bot.on("business_connection", async (ctx) => {
   console.log(`🔗 业务连接更新:conn=${bc.id} owner=${ownerUserId} can_reply=${canReply} enabled=${bc.is_enabled}`);
 });
 
+// ── 零配置绑定:bot 被拉进开启话题的群 → 自动绑定为控制台 ────────────────
+bot.on("my_chat_member", async (ctx) => {
+  if (forumChatId) return; // 已有控制台,换绑用 /bind
+  const mc = ctx.myChatMember;
+  const status = mc.new_chat_member.status;
+  const chat = mc.chat;
+  if (chat.type !== "supergroup" || !chat.is_forum) return;
+  if (status !== "member" && status !== "administrator") return;
+  await bindForum(chat.id);
+  try {
+    await ctx.api.sendMessage(chat.id, BIND_OK);
+  } catch {
+    /* 无发言权限等,静默 */
+  }
+});
+
 // ── 入站 ──────────────────────────────────────────────────────────────
 bot.on("business_message", (ctx) => {
   const m = ctx.businessMessage;
@@ -150,6 +182,11 @@ bot.on("business_message", (ctx) => {
       connectionId = msgConn;
       await setAppState("connectionId", msgConn).catch(() => {});
     }
+    const forum = forumChatId;
+    if (forum === undefined) {
+      console.warn("⚠️ 收到客户消息但控制台群还没绑定:把 bot 拉进开启话题的群,或在群里发 /bind。");
+      return;
+    }
     const fromId = m.from?.id;
 
     // 你本人手动回复也会回灌:存档 + 取消待发开场白
@@ -157,7 +194,7 @@ bot.on("business_message", (ctx) => {
       cancelGreeting(String(m.chat.id));
       const contact = await getContactByCustomer(String(m.chat.id));
       if (contact && contact.threadId != null && m.text) {
-        await ctx.api.sendMessage(config.forumChatId, `📝 [你手动回复] ${m.text}`, {
+        await ctx.api.sendMessage(forum, `📝 [你手动回复] ${m.text}`, {
           message_thread_id: contact.threadId,
         });
         await logMessage({ contactId: contact.id, direction: "manual", originalText: m.text });
@@ -175,7 +212,7 @@ bot.on("business_message", (ctx) => {
     // 归档的 Topic 收到新消息 → 复活并顶起
     if (existing && existing.archived && existing.threadId != null) {
       try {
-        await ctx.api.reopenForumTopic(config.forumChatId, existing.threadId);
+        await ctx.api.reopenForumTopic(forum, existing.threadId);
       } catch (e) {
         console.error("复活 Topic 失败:", e);
       }
@@ -185,7 +222,7 @@ bot.on("business_message", (ctx) => {
     // 确保有 Topic(返回 threadId 与是否新建)
     const ensureThread = async (): Promise<{ threadId: number; isNew: boolean }> => {
       if (existing?.threadId != null) return { threadId: existing.threadId, isNew: false };
-      const t = await ctx.api.createForumTopic(config.forumChatId, name);
+      const t = await ctx.api.createForumTopic(forum, name);
       await createContact({ id: customerId, chatId, threadId: t.message_thread_id, name, connId: msgConn });
       return { threadId: t.message_thread_id, isNew: true };
     };
@@ -197,7 +234,7 @@ bot.on("business_message", (ctx) => {
       const { threadId } = await ensureThread();
       if (existing) await touchContact(customerId, msgConn);
       const shown = sticker ? `贴纸 ${sticker.emoji ?? "❓"}` : `表情 ${emojiText}`;
-      await ctx.api.sendMessage(config.forumChatId, `😊 客户发来${shown}`, { message_thread_id: threadId });
+      await ctx.api.sendMessage(forum, `😊 客户发来${shown}`, { message_thread_id: threadId });
       await logMessage({
         contactId: customerId,
         direction: "in",
@@ -205,7 +242,7 @@ bot.on("business_message", (ctx) => {
         mediaType: "emoji",
       });
       const c = existing ?? (await getContactByCustomer(customerId));
-      if (!c?.greeted) scheduleGreeting(customerId, chatId, threadId, msgConn);
+      if (!c?.greeted) scheduleGreeting(customerId, chatId, forum, threadId, msgConn);
       return;
     }
 
@@ -227,31 +264,31 @@ bot.on("business_message", (ctx) => {
           size = ph.file_size;
           mediaType = "photo";
           fileName = `photo_${ph.file_unique_id}.jpg`;
-          await ctx.api.sendPhoto(config.forumChatId, fileId, opts);
+          await ctx.api.sendPhoto(forum, fileId, opts);
         } else if (m.voice) {
           fileId = m.voice.file_id;
           size = m.voice.file_size;
           mediaType = "voice";
           fileName = `voice_${m.voice.file_unique_id}.ogg`;
-          await ctx.api.sendVoice(config.forumChatId, fileId, opts);
+          await ctx.api.sendVoice(forum, fileId, opts);
         } else if (m.document) {
           fileId = m.document.file_id;
           size = m.document.file_size;
           mediaType = "document";
           fileName = m.document.file_name ?? `doc_${m.document.file_unique_id}`;
-          await ctx.api.sendDocument(config.forumChatId, fileId, opts);
+          await ctx.api.sendDocument(forum, fileId, opts);
         } else if (m.video) {
           fileId = m.video.file_id;
           size = m.video.file_size;
           mediaType = "video";
           fileName = m.video.file_name ?? `video_${m.video.file_unique_id}.mp4`;
-          await ctx.api.sendVideo(config.forumChatId, fileId, opts);
+          await ctx.api.sendVideo(forum, fileId, opts);
         } else {
-          await ctx.api.sendMessage(config.forumChatId, `📎 ${name} 发来非文本消息`, { message_thread_id: threadId });
+          await ctx.api.sendMessage(forum, `📎 ${name} 发来非文本消息`, { message_thread_id: threadId });
         }
       } catch (e) {
         console.error("媒体转发失败:", e);
-        await ctx.api.sendMessage(config.forumChatId, `📎 ${name} 发来[${mediaType}],转发失败`, {
+        await ctx.api.sendMessage(forum, `📎 ${name} 发来[${mediaType}],转发失败`, {
           message_thread_id: threadId,
         });
       }
@@ -259,7 +296,7 @@ bot.on("business_message", (ctx) => {
         const localPath = await downloadTgFile(fileId, customerId, fileName ?? mediaType);
         await createAsset({ contactId: customerId, direction: "in", type: mediaType, fileId, fileName, localPath: localPath ?? undefined, size });
         await ctx.api.sendMessage(
-          config.forumChatId,
+          forum,
           `💾 已存档${localPath ? "(已下载)" : "(>20MB 仅云端)"}:${fileName ?? mediaType}`,
           { message_thread_id: threadId },
         );
@@ -285,14 +322,14 @@ bot.on("business_message", (ctx) => {
       }
     } catch (e) {
       console.error("翻译失败,原文落档:", e);
-      await ctx.api.sendMessage(config.forumChatId, `⚠️ 翻译暂时失败,客户原文(请手动处理):\n${m.text}`, {
+      await ctx.api.sendMessage(forum, `⚠️ 翻译暂时失败,客户原文(请手动处理):\n${m.text}`, {
         message_thread_id: threadId,
       });
       await logMessage({ contactId: customerId, direction: "in", originalText: m.text });
       return;
     }
 
-    await ctx.api.sendMessage(config.forumChatId, renderCard(name, isNew, lang, m.text, zh), {
+    await ctx.api.sendMessage(forum, renderCard(name, isNew, lang, m.text, zh), {
       message_thread_id: threadId,
     });
     await logMessage({ contactId: customerId, direction: "in", originalText: m.text, originalLang: lang, zhText: zh });
@@ -301,10 +338,24 @@ bot.on("business_message", (ctx) => {
 
 // ── 出站:你在 Topic 里打中文 → 译客户语 → 以你名义发出 ──────────────────
 bot.on("message", async (ctx) => {
-  if (ctx.chat.id !== config.forumChatId) return;
+  if (ctx.from?.id === ctx.me.id) return;
+
+  // /bind:把当前群绑定/换绑为控制台(必须是开启话题的超级群)
+  const rawText = ctx.message.text?.trim();
+  if (rawText === "/bind" || rawText?.startsWith("/bind@")) {
+    if (ctx.chat.type === "supergroup" && ctx.chat.is_forum) {
+      await bindForum(ctx.chat.id);
+      await ctx.reply(BIND_OK, { message_thread_id: ctx.message.message_thread_id });
+    } else {
+      await ctx.reply("请先在群设置里开启「话题(Topics)」,再在群里发 /bind。");
+    }
+    return;
+  }
+
+  const forum = forumChatId;
+  if (forum === undefined || ctx.chat.id !== forum) return;
   const threadId = ctx.message.message_thread_id;
   if (threadId === undefined) return;
-  if (ctx.from?.id === ctx.me.id) return;
 
   const contact = await getContactByThread(threadId);
   if (!contact) return; // 非客户 Topic(General 等),不响应
@@ -371,9 +422,10 @@ bot.on("message", async (ctx) => {
       await setLang(contact.id, code);
       await ctx.reply(`✅ 已把「${contact.name}」的语种改为 ${code},后续出站按此翻译。`, { message_thread_id: threadId });
     } else if (cmd === "/help") {
-      await ctx.reply("话题命令:\n/lang <码> — 手动修正客户语种(如 /lang es)\n直接打中文 = 翻译预览后发给客户", {
-        message_thread_id: threadId,
-      });
+      await ctx.reply(
+        "话题命令:\n/lang <码> — 手动修正客户语种(如 /lang es)\n/bind — 把某个群绑定为控制台\n直接打中文 = 翻译预览后发给客户",
+        { message_thread_id: threadId },
+      );
     } else {
       await ctx.reply("未知命令,发 /help 查看。", { message_thread_id: threadId });
     }
@@ -396,7 +448,7 @@ bot.on("message", async (ctx) => {
   const token = ++pendingSeq;
   pendingOut.set(token, { contactId: contact.id, chatId: contact.chatId, connId: contact.connId ?? undefined, lang: targetLang, translated, zh });
   await ctx.api.sendMessage(
-    config.forumChatId,
+    forum,
     `📤 译文预览(→${targetLang}),确认后才发给客户:\n\n${translated}\n\n(你的中文:${zh})`,
     {
       message_thread_id: threadId,
@@ -457,12 +509,14 @@ bot.catch((err) => console.error("‼️ bot 出错:", err));
 
 /** 归档超过 archiveAfterDays 天无往来的活跃 Topic(由 main.ts 定时调用) */
 export async function archiveStaleTopics(): Promise<void> {
+  const forum = forumChatId;
+  if (forum === undefined) return;
   const cutoff = new Date(Date.now() - config.archiveAfterDays * 86_400_000);
   const stale = await getStaleContacts(cutoff);
   for (const c of stale) {
     if (c.threadId == null) continue;
     try {
-      await bot.api.closeForumTopic(config.forumChatId, c.threadId);
+      await bot.api.closeForumTopic(forum, c.threadId);
       await setArchived(c.id, true);
     } catch (e) {
       console.error(`归档 Topic 失败 ${c.id}:`, e);

@@ -122,7 +122,7 @@
 
   <div class="hero">
     <h1>Quick start: from zero to running, no steps skipped</h1>
-    <p>Just follow along — about 15 minutes total. Every step tells you which screen to open and what to tap, plus the pitfalls people actually hit.</p>
+    <p>The default path is <strong>cloud-hosted</strong>: just a phone and ~10 minutes — <strong>no server, no code</strong>. Every step tells you which screen to open and what to tap, plus the pitfalls people actually hit.</p>
   </div>
 
   <div class="toc">
@@ -131,10 +131,8 @@
     <a href="#s1">Step 1 · Create your bot in BotFather (two critical switches)</a>
     <a href="#s2">Step 2 · Link the bot in Telegram Business</a>
     <a href="#s3">Step 3 · Create your console forum group</a>
-    <a href="#s4">Step 4 · Get the three IDs &amp; keys</a>
-    <a href="#s5">Step 5 · Fill in .env</a>
-    <a href="#s6">Step 6 · Launch</a>
-    <a href="#s7">Step 7 · Test chat</a>
+    <a href="#s4">Step 4 · Pick one: ☁️ Cloud-hosted (recommended) / 💻 Self-host</a>
+    <a href="#s7">Step 5 · Test chat</a>
     <a href="#faq">Troubleshooting</a>
   </div>
 
@@ -142,10 +140,8 @@
     <h2>🧾 Checklist</h2>
     <ul>
       <li><strong>Telegram Premium</strong> — the Telegram Business features LingoDesk relies on (message relay to a bot) are Premium-only. <strong>Without Premium none of this works.</strong></li>
-      <li><strong>Node.js 20 or newer</strong> — run <code>node -v</code> in a terminal to check; install the LTS from nodejs.org if missing.</li>
-      <li><strong>Anthropic API key</strong> — the translation engine. Step 4 shows how to get one; an optional OpenAI key adds a fallback.</li>
-      <li><strong>The LingoDesk code</strong> — free and open source on <a href="https://github.com/sanxiaozi/lingodesk" style="color:var(--accent)">GitHub</a>; Step 4b clones it.</li>
-      <li><strong>An always-on computer</strong> — the bot process must keep running to receive and send (you can move it to a server later).</li>
+      <li><strong>A phone</strong> — that's all the cloud-hosted mode (the default) needs: do Steps 1–3 on your phone, send us the token, done.</li>
+      <li><strong>Self-hosting only</strong>: Node.js ≥ 20 (or Docker), an Anthropic API key, and an always-on computer/server. The code is free and open source on <a href="https://github.com/sanxiaozi/lingodesk" style="color:var(--accent)">GitHub</a>.</li>
     </ul>
   </section>
 
@@ -217,71 +213,32 @@
   </section>
 
   <section class="step" id="s4">
-    <h2><span class="n">4</span>Get the three IDs &amp; keys</h2>
+    <h2><span class="n">4</span>Pick one: ☁️ Cloud-hosted or 💻 Self-host</h2>
+    <p>Everything on the phone side is done. Now choose your path — <strong>no server? Pick A: nothing to install</strong>.</p>
 
-    <h3>4a. ANTHROPIC_API_KEY (the translation engine)</h3>
+    <h3>☁️ Option A · Cloud-hosted (recommended: no server, no code)</h3>
     <ol>
-      <li>Open <code>console.anthropic.com</code> and sign up / sign in.</li>
-      <li>Sidebar <strong>API Keys</strong> → <strong>Create Key</strong> → copy the <code>sk-ant-…</code> string (shown only once — store it).</li>
-      <li>Add a few dollars under Billing — the default Haiku model costs roughly $0.001 per translated message, so a few dollars lasts a long time.</li>
+      <li>Send us the <strong>BOT_TOKEN</strong> from Step 1: <a href="mailto:hello@lingodesk.org?subject=LingoDesk%20cloud%20activation&body=BOT_TOKEN%3A%20(paste%20here)%0AMy%20Telegram%20username%3A%20%40" style="color:var(--accent)"><strong>click to open a pre-filled email</strong></a> — paste the token and hit send.</li>
+      <li>We activate your relay within <strong>24 hours</strong> and confirm by email. The beta is <strong>free</strong>, and the translation engine is on us — no API keys to sign up for.</li>
+      <li>Once confirmed, send <code>/bind</code> in your <strong>console group</strong> — the bot replies "✅ bound" and you're done. Jump to Step 5 to test.</li>
     </ol>
+    <div class="callout ok">Worried about handing over the token? It's only used to relay the chats you authorized in Telegram Business — and you stay in control: revoke it any time in BotFather (/mybots → API Token → Revoke) and the old token dies instantly.</div>
 
-    <h3>4b. First contact with the code: install deps + set BOT_TOKEN</h3>
-    <p>In a terminal, inside the LingoDesk folder:</p>
+    <h3>💻 Option B · Self-host (your own machine, your own data)</h3>
+    <p>First grab a translation key at <code>console.anthropic.com</code> → <strong>API Keys</strong> → <strong>Create Key</strong> (<code>sk-ant-…</code>; a few dollars of credit lasts a long time at ~$0.001 per message). Then:</p>
     <div class="term"><span class="cmd">git clone https://github.com/sanxiaozi/lingodesk.git</span>
 <span class="cmd">cd lingodesk</span>
 <span class="cmd">npm install</span>
-<span class="cmd">cp .env.example .env</span></div>
-    <p>Open <code>.env</code> in any editor and fill in just one line for now: <code>BOT_TOKEN=the token from Step 1</code>. Save.</p>
-
-    <h3>4c. FORUM_CHAT_ID and OWNER_USER_ID: one command</h3>
-    <ol>
-      <li>Post anything (e.g. "test") in your <strong>console group</strong>.</li>
-      <li>From <strong>your own account</strong>, open a private chat with the bot (search its username) and send <code>/start</code>.</li>
-      <li>Back in the terminal:</li>
-    </ol>
-    <div class="term"><span class="cmd">npm run ids</span>
-<span class="out">── Chats (the supergroup row starting with -100 = FORUM_CHAT_ID) ──</span>
-<span class="out">  <span class="hl">-1002345678901</span>  supergroup · LingoDesk Console</span>
-<span class="out">── Users (your own row = OWNER_USER_ID) ──</span>
-<span class="out">  <span class="hl">712345678</span>  Jason @your_username</span></div>
-    <div class="callout ok">The two highlighted numbers are the values you need. If the output says "(empty)", those two messages haven't been sent yet — send them and rerun. If you get a 409, the bot is currently running — stop it first.</div>
-  </section>
-
-  <section class="step" id="s5">
-    <h2><span class="n">5</span>Fill in .env</h2>
-    <p>Complete your <code>.env</code> (all other lines can stay at their defaults):</p>
-    <div class="term"><span class="out"># The four required values</span>
-BOT_TOKEN=<span class="hl">8123456789:AAHfK3xxxxxxxxxxxxxxxxxxxxxxxxx</span>
-FORUM_CHAT_ID=<span class="hl">-1002345678901</span>
-OWNER_USER_ID=<span class="hl">712345678</span>
-ANTHROPIC_API_KEY=<span class="hl">sk-ant-xxxxxxxxxxxxxxxx</span>
-
-<span class="out"># Optional: OpenAI fallback (auto-switches if Claude has an outage — recommended)</span>
-OPENAI_API_KEY=sk-xxxxxxxx</div>
-    <ul>
-      <li><code>FORUM_CHAT_ID</code> is negative — <strong>copy the whole string</strong> including the <code>-100</code> prefix.</li>
-      <li><code>OWNER_USER_ID</code> is not optional in practice: it's how the bot tells "the customer wrote this" from "I replied manually myself". Leave it empty and your own manual replies get treated as customer messages.</li>
-    </ul>
-  </section>
-
-  <section class="step" id="s6">
-    <h2><span class="n">6</span>Launch</h2>
-    <div class="term"><span class="cmd">npm run db:push</span>
-<span class="out">🚀 Your database is now in sync with your Prisma schema.</span>
+<span class="cmd">cp .env.example .env</span>   <span class="out"># open .env — only BOT_TOKEN and ANTHROPIC_API_KEY are required</span>
+<span class="cmd">npm run db:push</span>        <span class="out"># initialize the database (first run only)</span>
 <span class="cmd">npm run dev</span>
-<span class="out">────────────────────────────────────────</span>
-<span class="out">🚀 LingoDesk is up, bot = @my_lingodesk_bot</span>
-<span class="out">   Receive → translate → reply → translate relay:</span>
-<span class="out">   · Customers DM your personal account → auto-translated card in your console topic</span>
-<span class="out">   · You type in a topic → preview → sent in their language, as you</span>
-<span class="out">────────────────────────────────────────</span></div>
-    <p>That banner means it's alive. <code>db:push</code> initializes the local database on first run — you won't need it again.</p>
-    <div class="callout warn">One bot token = <strong>one running instance, globally</strong>. A <code>409 Conflict</code> means another process is still holding it (e.g. a previous run that never exited) — stop everything, then start again.</div>
+<span class="out">🚀 LingoDesk is up, bot = @my_lingodesk_bot</span></div>
+    <p>Once you see the banner, send <code>/bind</code> in your <strong>console group</strong> to link it (group ID and your user ID are detected automatically — <strong>no numbers to look up</strong>). On a server, Docker is one command: <code>docker compose up -d</code> — see the <a href="https://github.com/sanxiaozi/lingodesk" style="color:var(--accent)">GitHub README</a>.</p>
+    <div class="callout warn">One bot token = <strong>one running instance, globally</strong> (<code>409 Conflict</code> = an old process is still holding it). If we host you, don't also run a local instance.</div>
   </section>
 
   <section class="step" id="s7">
-    <h2><span class="n">7</span>Test chat</h2>
+    <h2><span class="n">5</span>Test chat</h2>
     <p>From <strong>a different Telegram account</strong> (a second account or a friend), send a foreign-language DM to <strong>your personal account</strong> (not to the bot!) — say, "Hola, ¿cuánto cuesta?" in Spanish. Within seconds, a new topic named after the sender should appear in your console group:</p>
     <div class="chat">
       <div class="title">📋 LingoDesk Console · topic: @amigo_es</div>
@@ -301,7 +258,15 @@ OPENAI_API_KEY=sk-xxxxxxxx</div>
     <h2>🔧 Troubleshooting</h2>
     <details>
       <summary>A customer wrote to me but nothing appears in the console group</summary>
-      <p>Check in order: ① BotFather → Business Mode is turned on (Step 1a); ② Telegram Business → Chatbots has your bot linked and that chat is within scope (Step 2); ③ the bot is a group admin with "Manage Topics" (Step 3); ④ the bot process is still running in your terminal without errors.</p>
+      <p>Check in order: ① BotFather → Business Mode is turned on (Step 1a); ② Telegram Business → Chatbots has your bot linked and that chat is within scope (Step 2); ③ the bot is a group admin with "Manage Topics" (Step 3); ④ the console group is bound — send <code>/bind</code> in it; ⑤ self-hosters: the bot process is still running without errors.</p>
+    </details>
+    <details>
+      <summary>I send /bind in the group and nothing happens</summary>
+      <p>① Group Privacy is still on (Step 1b) — turn it off, then remove and re-add the bot; ② Topics aren't enabled on the group; ③ cloud-hosted users: make sure you've received our activation email (the bot isn't running before that); ④ self-hosters: make sure the process is running.</p>
+    </details>
+    <details>
+      <summary>Is it safe to hand over my BOT_TOKEN for cloud hosting?</summary>
+      <p>The token is only used to relay chats within the scope you authorized in Telegram Business — and you can exclude private contacts (Step 2). You stay in control: revoke it any time via BotFather → /mybots → API Token → <strong>Revoke</strong>; the old token dies instantly and the service stops. Just drop us an email before you do.</p>
     </details>
     <details>
       <summary>I type in a topic and the bot does nothing</summary>

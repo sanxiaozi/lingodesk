@@ -15,34 +15,32 @@
 
 ## 两种用法
 
-1. **自托管** —— 免费开源,按下方快速开始跑起来,或看更详细的[图文教程](https://lingodesk.org/zh/setup/)(约 15 分钟)。
-2. **托管到我们的服务器** —— 不想自己运维?我们替你跑:[hello@lingodesk.org](mailto:hello@lingodesk.org?subject=LingoDesk%20托管)。
+1. **云托管(默认 —— 无需服务器、无需代码)**:手机上完成 Telegram 侧设置,把 bot token 发给我们,其余(含翻译引擎)全由我们运行。照[图文教程](https://lingodesk.org/zh/setup/)做,约 10 分钟。内测期免费。
+2. **自托管** —— 免费开源,快速开始见下。
 
-## 前置条件
+## 自托管前置条件
 
-- **Telegram Premium**(Business 回灌是 Premium 专属,硬性前提)
+- **Telegram Premium**(Business 回灌是 Premium 专属,两种模式都需要)
 - Node.js ≥ 20(或 Docker)
 - `ANTHROPIC_API_KEY`(必填)+ `OPENAI_API_KEY`(可选兜底)
 
-## 快速开始
+## 快速开始(自托管)
+
+1. 用 [@BotFather](https://t.me/BotFather) 建 bot(`/newbot`),然后在 *Bot Settings* 里 **开启 Business Mode**、**关闭 Group Privacy**(两个都必做)。
+2. 手机 → 设置 → **Telegram Business** → **Chatbots** → 绑定你的 bot,勾选「回复消息」权限。
+3. 建一个群拉入 bot,开启 **话题(Topics)**,把 bot 设为管理员并勾选 **管理话题**。
+4. 然后:
 
 ```bash
 git clone https://github.com/sanxiaozi/lingodesk.git
 cd lingodesk
 npm install
-cp .env.example .env
+cp .env.example .env   # 只需填 BOT_TOKEN 和 ANTHROPIC_API_KEY 两行
+npm run db:push        # 建表(仅首次)
+npm run start          # 开发时用 npm run dev(热重载)
 ```
 
-1. 用 [@BotFather](https://t.me/BotFather) 建 bot(`/newbot`),然后在 *Bot Settings* 里 **开启 Business Mode**、**关闭 Group Privacy**(两个都必做)。
-2. 手机 → 设置 → **Telegram Business** → **Chatbots** → 绑定你的 bot,勾选「回复消息」权限。
-3. 建一个群拉入 bot,开启 **话题(Topics)**,把 bot 设为管理员并勾选 **管理话题**。
-4. 把 `BOT_TOKEN` 填进 `.env`,在群里发一句、再用自己账号私聊 bot 发 `/start`,然后跑 `npm run ids` —— 直接打印出 `FORUM_CHAT_ID` 和 `OWNER_USER_ID`。
-5. 补全 `.env`(加上 `ANTHROPIC_API_KEY`),然后:
-
-```bash
-npm run db:push   # 建表(仅首次)
-npm run start     # 开发时用 npm run dev(热重载)
-```
+5. 在控制台群里发一句 `/bind` —— 群 ID 和你的用户 ID 全自动识别,不用查任何数字。
 
 哪一步卡住了?[图文教程](https://lingodesk.org/zh/setup/)覆盖每个界面和所有已知坑。
 
