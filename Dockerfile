@@ -8,6 +8,10 @@ RUN apt-get update -y \
 
 WORKDIR /app
 
+# 默认落到 /app/data 和 /app/storage(compose 会挂载同路径;裸 docker run 也能跑)
+ENV DATABASE_URL=file:/app/data/lingodesk.db \
+    STORAGE_DIR=/app/storage
+
 COPY package.json package-lock.json ./
 COPY prisma ./prisma
 RUN npm ci && npx prisma generate
