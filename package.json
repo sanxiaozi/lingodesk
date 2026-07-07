@@ -1,0 +1,26 @@
+{
+  "name": "lingodesk",
+  "version": "0.1.0",
+  "description": "LingoDesk — 在 Telegram 上用母语和全世界聊天。收→译→回→译全自动的跨语言沟通中继。",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "tsx watch src/main.ts",
+    "start": "tsx src/main.ts",
+    "typecheck": "tsc --noEmit",
+    "db:push": "prisma db push"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.105.0",
+    "@prisma/client": "^6.19.3",
+    "dotenv": "^16.4.5",
+    "grammy": "^1.30.0",
+    "openai": "^6.45.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.7.0",
+    "prisma": "^6.19.3",
+    "tsx": "^4.19.1",
+    "typescript": "^5.6.2"
+  }
+}

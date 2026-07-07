@@ -1,0 +1,63 @@
+// LingoDesk 数据模型 —— 只保留跨语言沟通所需的最小集合。
+// 单租户先用 SQLite;上线多租户时改 provider = "postgresql" + DATABASE_URL,
+// 并给每张表加 tenantId(见 PLAN.md「多租户」章节)。
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// 一个联系人 = 一个客户 + 其常驻控制台 Topic(话题线程)
+model Contact {
+  id           String    @id // 客户 Telegram user.id
+  chatId       String // 私聊 chat.id(出站发送用)
+  threadId     Int?      @unique // 控制台论坛 Topic id
+  lang         String    @default("unknown") // 锁定语种(ISO 639-1)
+  name         String // 展示名
+  archived     Boolean   @default(false) // Topic 是否已归档
+  greeted      Boolean   @default(false) // 是否已发过自动开场白
+  connId       String? // 该客户最近消息的 business_connection_id(出站匹配 peer 用)
+  lastActiveAt DateTime  @default(now()) // 末次往来(归档/复活判据)
+
+  messages     Message[]
+  assets       Asset[]
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+// 双语消息存档(原文 + 中文)
+model Message {
+  id           Int      @id @default(autoincrement())
+  contactId    String
+  contact      Contact  @relation(fields: [contactId], references: [id])
+  direction    String // in(客户发来) / out(你发出)
+  originalText String
+  originalLang String   @default("")
+  zhText       String   @default("")
+  mediaType    String?
+  createdAt    DateTime @default(now())
+}
+
+// 双向文件/媒体存档
+model Asset {
+  id        Int      @id @default(autoincrement())
+  contactId String
+  contact   Contact  @relation(fields: [contactId], references: [id])
+  direction String   @default("in") // in / out
+  type      String // photo/voice/document/video
+  fileId    String // Telegram 云端引用(可随时重发)
+  fileName  String?
+  localPath String? // 本地存档路径(可选下载)
+  size      Int?
+  createdAt DateTime @default(now())
+}
+
+// 轻量 KV(存有效 connectionId 等运行时状态,重启恢复)
+model AppState {
+  key   String @id
+  value String
+}
