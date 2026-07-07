@@ -27,7 +27,7 @@
 ## 快速开始
 
 ```bash
-git clone https://github.com/lingodesk/lingodesk.git
+git clone https://github.com/sanxiaozi/lingodesk.git
 cd lingodesk
 npm install
 cp .env.example .env
@@ -51,7 +51,7 @@ npm run start     # 开发时用 npm run dev(热重载)
 **Docker(推荐):**
 
 ```bash
-git clone https://github.com/lingodesk/lingodesk.git && cd lingodesk
+git clone https://github.com/sanxiaozi/lingodesk.git && cd lingodesk
 cp .env.example .env   # 填好四个必填项
 docker compose up -d --build
 docker compose logs -f # 看到启动横幅即成功

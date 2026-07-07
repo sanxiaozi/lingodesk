@@ -28,7 +28,7 @@ Customers message your **personal Telegram account** in any language. LingoDesk 
 ## Quick start
 
 ```bash
-git clone https://github.com/lingodesk/lingodesk.git
+git clone https://github.com/sanxiaozi/lingodesk.git
 cd lingodesk
 npm install
 cp .env.example .env
@@ -52,7 +52,7 @@ Stuck anywhere? The [illustrated guide](https://lingodesk.org/setup/) covers eve
 **Docker (recommended):**
 
 ```bash
-git clone https://github.com/lingodesk/lingodesk.git && cd lingodesk
+git clone https://github.com/sanxiaozi/lingodesk.git && cd lingodesk
 cp .env.example .env   # fill in the four required values
 docker compose up -d --build
 docker compose logs -f # watch the startup banner
