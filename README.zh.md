@@ -15,8 +15,8 @@
 
 ## 两种用法
 
-1. **云托管(默认 —— 无需服务器、无需代码)**:手机上完成 Telegram 侧设置,把 bot token 发给我们,其余(含翻译引擎)全由我们运行。照[图文教程](https://lingodesk.org/zh/setup/)做,约 10 分钟。内测期免费。
-2. **自托管** —— 免费开源,快速开始见下。
+1. **云托管(默认 —— 无需服务器、无需代码)**:手机上完成 Telegram 侧设置,把 bot token 私聊发给 [@LingoDeskbot](https://t.me/LingoDeskbot) —— **秒级自动开通**,翻译引擎也由我们提供。照[图文教程](https://lingodesk.org/zh/setup/)做,约 10 分钟。内测期免费。
+2. **自托管** —— 免费开源,快速开始见下。同一套代码天然多租户:你的实例也能托管别人(他们把 token 私聊发给*你的*门户 bot 即可)。
 
 ## 自托管前置条件
 
@@ -35,12 +35,12 @@
 git clone https://github.com/sanxiaozi/lingodesk.git
 cd lingodesk
 npm install
-cp .env.example .env   # 只需填 BOT_TOKEN 和 ANTHROPIC_API_KEY 两行
+cp .env.example .env   # 必填:BOT_TOKEN、ANTHROPIC_API_KEY、TOKEN_SECRET(openssl rand -hex 32)
 npm run db:push        # 建表(仅首次)
 npm run start          # 开发时用 npm run dev(热重载)
 ```
 
-5. 在控制台群里发一句 `/bind` —— 群 ID 和你的用户 ID 全自动识别,不用查任何数字。
+5. 私聊你自己的 bot,把 `.env` 里那个 token 发给它 —— 持有 token 即所有权证明,立即把你注册为第一个租户;然后在控制台群里发 `/bind`。群 ID 和用户 ID 全自动识别,不用查任何数字。
 
 哪一步卡住了?[图文教程](https://lingodesk.org/zh/setup/)覆盖每个界面和所有已知坑。
 

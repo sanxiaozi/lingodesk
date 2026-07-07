@@ -1,6 +1,5 @@
-// LingoDesk 数据模型 —— 只保留跨语言沟通所需的最小集合。
-// 单租户先用 SQLite;上线多租户时改 provider = "postgresql" + DATABASE_URL,
-// 并给每张表加 tenantId(见 PLAN.md「多租户」章节)。
+// LingoDesk 数据模型 —— M1 多租户:每个租户自己的 bot,一进程 N 个实例。
+// 单机先用 SQLite;量大时改 provider = "postgresql" + DATABASE_URL,本文件其余不动。
 
 generator client {
   provider = "prisma-client-js"
@@ -11,33 +10,58 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// 一个联系人 = 一个客户 + 其常驻控制台 Topic(话题线程)
-model Contact {
-  id           String    @id // 客户 Telegram user.id
-  chatId       String // 私聊 chat.id(出站发送用)
-  threadId     Int?      @unique // 控制台论坛 Topic id
-  lang         String    @default("unknown") // 锁定语种(ISO 639-1)
-  name         String // 展示名
-  archived     Boolean   @default(false) // Topic 是否已归档
-  greeted      Boolean   @default(false) // 是否已发过自动开场白
-  connId       String? // 该客户最近消息的 business_connection_id(出站匹配 peer 用)
-  lastActiveAt DateTime  @default(now()) // 末次往来(归档/复活判据)
-
-  messages     Message[]
-  assets       Asset[]
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+// 一个租户 = 一个提交了自有 bot token 的用户(经官方门户 bot 自助开通)
+model Tenant {
+  id          String    @id // 提交者(owner)的 Telegram user.id
+  botId       String    @unique // 租户 bot 的 user.id(防同一 bot 被重复注册)
+  botUsername String    @default("") // 租户 bot 的 @username
+  botToken    String // AES-256-GCM 加密存储(密钥 = TOKEN_SECRET)
+  name        String    @default("") // 提交者展示名
+  username    String    @default("") // 提交者 @username
+  nativeLang  String    @default("zh") // 租户母语(入站译入的目标语,ISO 639-1)
+  connId      String    @default("") // 最新 business_connection_id(事件/消息实时刷新)
+  ownerUserId String    @default("") // Business 侧 owner user.id(以 business_connection 事件为准)
+  forumChatId String? // 控制台论坛群 chat_id(字符串存,防 Int32 溢出;/bind 绑定)
+  status      String    @default("active") // active / disabled
+  statusNote  String    @default("") // 停用原因(token 失效 / 409 冲突 / 手动)
+  contacts    Contact[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }
 
-// 双语消息存档(原文 + 中文)
+// 一个联系人 = 某租户的一个客户 + 其常驻控制台 Topic(话题线程)
+model Contact {
+  id           Int      @id @default(autoincrement())
+  tenantId     String
+  tenant       Tenant   @relation(fields: [tenantId], references: [id])
+  tgId         String // 客户 Telegram user.id
+  chatId       String // 私聊 chat.id(出站发送用)
+  threadId     Int? // 控制台论坛 Topic id
+  lang         String   @default("unknown") // 锁定语种(ISO 639-1)
+  name         String // 展示名
+  archived     Boolean  @default(false) // Topic 是否已归档
+  greeted      Boolean  @default(false) // 是否已发过自动开场白
+  connId       String? // 该客户最近消息的 business_connection_id(出站匹配 peer 用)
+  lastActiveAt DateTime @default(now()) // 末次往来(归档/复活判据)
+
+  messages  Message[]
+  assets    Asset[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@unique([tenantId, tgId])
+  @@unique([tenantId, threadId])
+}
+
+// 双语消息存档(原文 + 租户母语译文)
 model Message {
   id           Int      @id @default(autoincrement())
-  contactId    String
+  contactId    Int
   contact      Contact  @relation(fields: [contactId], references: [id])
-  direction    String // in(客户发来) / out(你发出)
+  direction    String // in(客户发来) / out(你发出) / manual(你手动回)
   originalText String
   originalLang String   @default("")
-  zhText       String   @default("")
+  nativeText   String   @default("") // 母语译文(入站)/原话(出站)
   mediaType    String?
   createdAt    DateTime @default(now())
 }
@@ -45,7 +69,7 @@ model Message {
 // 双向文件/媒体存档
 model Asset {
   id        Int      @id @default(autoincrement())
-  contactId String
+  contactId Int
   contact   Contact  @relation(fields: [contactId], references: [id])
   direction String   @default("in") // in / out
   type      String // photo/voice/document/video
@@ -56,7 +80,7 @@ model Asset {
   createdAt DateTime @default(now())
 }
 
-// 轻量 KV(存有效 connectionId 等运行时状态,重启恢复)
+// 轻量 KV(运行时杂项,重启恢复)
 model AppState {
   key   String @id
   value String

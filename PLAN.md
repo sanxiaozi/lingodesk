@@ -22,13 +22,14 @@
 
 ## M1 — 多租户 SaaS 化
 
-一个 bot 服务 N 个付费用户(每个用户 = 一个租户 = 一条 business_connection):
+✅ 已完成(2026-07-07)。架构定调:**每个租户自己的 bot**(token 主权/风控隔离/可无缝迁自托管),不做共享 bot:
 
-- datasource 改 `postgresql`,所有表加 `tenantId`(= 绑定用户的 owner user.id)
-- `business_connection` 事件即租户注册入口:自动建租户档案
-- 每租户一个控制台论坛群(bot 引导用户建群、拉 bot、发 `/bind` 绑定 forumChatId)
-- 路由:入站按 `business_connection_id` → 租户;出站按 forumChatId → 租户
-- 租户级配置:开场白文案、归档天数、母语(不一定是中文 → 译中层参数化为「译成租户母语」)
+- [x] 数据层:Tenant(botToken AES-GCM 加密 / botId 唯一 / nativeLang / status)+ Contact/Message/Asset 挂 tenantId
+- [x] BotManager:一进程 N 个 grammy 实例,各自 long polling;新租户热挂载;401(token 失效)/409(多处运行)自动停用 + 门户私聊通知
+- [x] 开通自动化:官方门户 bot 自助 —— 私聊发 token → getMe 校验 → 秒级开通(自动删 token 消息);持有 token 即所有权证明(自托管者发自己 bot 的 token = 注册为第一租户,实例复用门户)
+- [x] 用户命令 /status /native /enable;管理命令 /tenants /disable /enable(ADMIN_USER_ID)
+- [x] 母语参数化:入站译成 tenant.nativeLang(默认 zh),出站纯翻译引擎不变
+- [x] 路由天然隔离:每租户自己的 bot 实例,无需按 connId 分发;用量按 Message 表统计(为 M2 计费铺路)
 
 ## M2 — 商业化
 

@@ -216,13 +216,13 @@
     <h2><span class="n">4</span>Pick one: ☁️ Cloud-hosted or 💻 Self-host</h2>
     <p>Everything on the phone side is done. Now choose your path — <strong>no server? Pick A: nothing to install</strong>.</p>
 
-    <h3>☁️ Option A · Cloud-hosted (recommended: no server, no code)</h3>
+    <h3>☁️ Option A · Cloud-hosted (recommended: no server, no code, instant)</h3>
     <ol>
-      <li>Send us the <strong>BOT_TOKEN</strong> from Step 1: <a href="mailto:hello@lingodesk.org?subject=LingoDesk%20cloud%20activation&body=BOT_TOKEN%3A%20(paste%20here)%0AMy%20Telegram%20username%3A%20%40" style="color:var(--accent)"><strong>click to open a pre-filled email</strong></a> — paste the token and hit send.</li>
-      <li>We activate your relay within <strong>24 hours</strong> and confirm by email. The beta is <strong>free</strong>, and the translation engine is on us — no API keys to sign up for.</li>
-      <li>Once confirmed, send <code>/bind</code> in your <strong>console group</strong> — the bot replies "✅ bound" and you're done. Jump to Step 5 to test.</li>
+      <li>DM the official activation bot <a href="https://t.me/LingoDeskbot" style="color:var(--accent)"><strong>@LingoDeskbot</strong></a>, send <code>/start</code>, then paste the <strong>BOT_TOKEN</strong> from Step 1 right into the chat.</li>
+      <li><strong>Instant automatic activation</strong>: once the token validates it replies "🎉 Activated" (and deletes your token message). The beta is <strong>free</strong>, and the translation engine is on us — no API keys to sign up for.</li>
+      <li>Follow its reply to finish linking, then send <code>/bind</code> in your <strong>console group</strong> — the bot replies "✅ bound" and you're done. Jump to Step 5 to test. DM it <code>/status</code> any time, or <code>/native en</code> to set your own language.</li>
     </ol>
-    <div class="callout ok">Worried about handing over the token? It's only used to relay the chats you authorized in Telegram Business — and you stay in control: revoke it any time in BotFather (/mybots → API Token → Revoke) and the old token dies instantly.</div>
+    <div class="callout ok">Worried about handing over the token? It's stored encrypted and only used to relay the chats you authorized in Telegram Business — and you stay in control: revoke it any time in BotFather (/mybots → API Token → Revoke) and the old token dies instantly.</div>
 
     <h3>💻 Option B · Self-host (your own machine, your own data)</h3>
     <p>First grab a translation key at <code>console.anthropic.com</code> → <strong>API Keys</strong> → <strong>Create Key</strong> (<code>sk-ant-…</code>; a few dollars of credit lasts a long time at ~$0.001 per message). Then:</p>
@@ -262,11 +262,11 @@
     </details>
     <details>
       <summary>I send /bind in the group and nothing happens</summary>
-      <p>① Group Privacy is still on (Step 1b) — turn it off, then remove and re-add the bot; ② Topics aren't enabled on the group; ③ cloud-hosted users: make sure you've received our activation email (the bot isn't running before that); ④ self-hosters: make sure the process is running.</p>
+      <p>① Group Privacy is still on (Step 1b) — turn it off, then remove and re-add the bot; ② Topics aren't enabled on the group; ③ cloud-hosted users: make sure @LingoDeskbot replied "Activated" (DM it /status to check); ④ self-hosters: make sure the process is running.</p>
     </details>
     <details>
       <summary>Is it safe to hand over my BOT_TOKEN for cloud hosting?</summary>
-      <p>The token is only used to relay chats within the scope you authorized in Telegram Business — and you can exclude private contacts (Step 2). You stay in control: revoke it any time via BotFather → /mybots → API Token → <strong>Revoke</strong>; the old token dies instantly and the service stops. Just drop us an email before you do.</p>
+      <p>The token is stored encrypted and only used to relay chats within the scope you authorized in Telegram Business — and you can exclude private contacts (Step 2). You stay in control: revoke it any time via BotFather → /mybots → API Token → <strong>Revoke</strong>; the old token dies instantly and the service stops. To resume, just send the new token to @LingoDeskbot.</p>
     </details>
     <details>
       <summary>I type in a topic and the bot does nothing</summary>

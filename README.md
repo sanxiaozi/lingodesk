@@ -16,8 +16,8 @@ Customers message your **personal Telegram account** in any language. LingoDesk 
 
 ## Two ways to run it
 
-1. **Cloud-hosted (default — no server, no code)**: do the Telegram-side setup from your phone and send us your bot token; we run everything, translation engine included. Follow the illustrated [setup guide](https://lingodesk.org/setup/) (~10 minutes). Free during beta.
-2. **Self-host** — free and open source, quick start below.
+1. **Cloud-hosted (default — no server, no code)**: do the Telegram-side setup from your phone, then DM your bot token to [@LingoDeskbot](https://t.me/LingoDeskbot) — **instant automatic activation**, translation engine included. Follow the illustrated [setup guide](https://lingodesk.org/setup/) (~10 minutes). Free during beta.
+2. **Self-host** — free and open source, quick start below. The same codebase is multi-tenant: your instance can host other users too (they DM their tokens to *your* portal bot).
 
 ## Self-host requirements
 
@@ -36,12 +36,12 @@ Customers message your **personal Telegram account** in any language. LingoDesk 
 git clone https://github.com/sanxiaozi/lingodesk.git
 cd lingodesk
 npm install
-cp .env.example .env   # only BOT_TOKEN and ANTHROPIC_API_KEY are required
+cp .env.example .env   # required: BOT_TOKEN, ANTHROPIC_API_KEY, TOKEN_SECRET (openssl rand -hex 32)
 npm run db:push        # initialize SQLite (first run only)
 npm run start          # or: npm run dev (hot reload)
 ```
 
-5. Send `/bind` in your console group — the group ID and your user ID are detected automatically, nothing to look up.
+5. DM your own bot its token (the same one from `.env`) — possessing the token proves ownership, so it registers you as the first tenant instantly. Then send `/bind` in your console group. Group ID and user ID are detected automatically — nothing to look up.
 
 Stuck anywhere? The [illustrated guide](https://lingodesk.org/setup/) covers every screen and every known pitfall.
 

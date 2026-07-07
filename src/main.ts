@@ -1,27 +1,31 @@
 /**
- * 入口:启动 bot(long polling)。
- * 注意:全局只能有一个实例在跑(否则 getUpdates 409),启动前确保探针/其它实例已停。
+ * 入口:官方门户 bot(自助开通)+ N 个租户中继实例。
+ * 挂载顺序很重要:先 startAll(若官方 bot 兼任某租户中继,把中继 handler 挂上),
+ * 再 attachPortal(私聊开通),最后 start —— 中继不匹配的更新会 next() 流到门户。
  */
-import { bot, archiveStaleTopics, loadSavedState } from "./bot.js";
+import { Bot } from "grammy";
+import { config } from "./config.js";
+import { attachPortal } from "./portal.js";
+import { startAll, archiveStaleTopics, getRunningCount } from "./manager.js";
 
-// 启动前从 DB 恢复上次有效的 business connection_id(防 restart 后用失效的 .env 旧值)
-await loadSavedState();
+const portal = new Bot(config.botToken);
 
-// 每小时检查一次,归档不活跃 Topic
+await startAll(portal);
+attachPortal(portal);
+
+// 每小时检查一次,归档各租户不活跃 Topic
 setInterval(() => {
   archiveStaleTopics().catch((e) => console.error("归档任务出错:", e));
 }, 3_600_000);
 
-bot.start({
+void portal.start({
   // 必须显式声明,否则收不到 business_* / my_chat_member 更新
   allowed_updates: ["business_connection", "business_message", "message", "callback_query", "my_chat_member"],
   onStart: (me) => {
     console.log("─".repeat(60));
-    console.log(`🚀 LingoDesk 已启动,bot = @${me.username}`);
-    console.log("   收→译→回→译 跨语言沟通中继:");
-    console.log("   · 控制台群零配置:把 bot 拉进开启话题的群即自动绑定(或群里发 /bind)");
-    console.log("   · 客户私聊你真人号 → 自动译中 + 在控制台 Topic 弹双语卡片");
-    console.log("   · 你在 Topic 内打中文 → 预览确认 → 译客户语,以你名义发出");
+    console.log(`🚀 LingoDesk M1 已启动,官方门户 = @${me.username}`);
+    console.log(`   · 私聊 @${me.username} 发 bot token = 自助开通(分钟级)`);
+    console.log(`   · 租户实例:${getRunningCount()} 个在跑,每租户自己的 bot,互相隔离`);
     console.log("─".repeat(60));
   },
 });

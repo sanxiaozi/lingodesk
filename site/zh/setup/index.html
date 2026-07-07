@@ -202,13 +202,13 @@
     <h2><span class="n">4</span>二选一:☁️ 云托管 或 💻 自托管</h2>
     <p>到这里,手机上的准备已全部完成。接下来选一条路——<strong>没有服务器就选 A,什么都不用装</strong>。</p>
 
-    <h3>☁️ 方式 A · 云托管(推荐:无需服务器、无需代码)</h3>
+    <h3>☁️ 方式 A · 云托管(推荐:无需服务器、无需代码,秒级开通)</h3>
     <ol>
-      <li>把第 1 步拿到的 <strong>BOT_TOKEN</strong> 发给我们:<a href="mailto:hello@lingodesk.org?subject=LingoDesk%20%E4%BA%91%E6%89%98%E7%AE%A1%E5%BC%80%E9%80%9A&body=BOT_TOKEN%EF%BC%9A%EF%BC%88%E7%B2%98%E8%B4%B4%E5%9C%A8%E8%BF%99%E9%87%8C%EF%BC%89%0A%E6%88%91%E7%9A%84%20Telegram%20%E7%94%A8%E6%88%B7%E5%90%8D%EF%BC%9A%40" style="color:var(--accent)"><strong>点此一键生成开通邮件</strong></a>(模板已备好,粘贴 token 发送即可)。</li>
-      <li>我们在 <strong>24 小时内</strong>为你开通并邮件回复确认。内测期<strong>免费</strong>,翻译引擎也由我们提供,不用申请任何 API Key。</li>
-      <li>收到确认后,在你的<strong>控制台群</strong>里发一句 <code>/bind</code> —— bot 回复「✅ 已绑定」,全部完成,直接跳到第 5 步试聊。</li>
+      <li>私聊官方开通机器人 <a href="https://t.me/LingoDeskbot" style="color:var(--accent)"><strong>@LingoDeskbot</strong></a>,发 <code>/start</code>,然后把第 1 步拿到的 <strong>BOT_TOKEN</strong> 直接发给它。</li>
+      <li><strong>秒级自动开通</strong>:校验通过立即回复「🎉 开通成功」(你发的 token 消息会被自动删除)。内测期<strong>免费</strong>,翻译引擎也由我们提供,不用申请任何 API Key。</li>
+      <li>按它回复的指引完成绑定,最后在你的<strong>控制台群</strong>里发一句 <code>/bind</code> —— bot 回复「✅ 已绑定」,全部完成,直接跳到第 5 步试聊。随时私聊它发 <code>/status</code> 查状态、<code>/native en</code> 切换你的母语。</li>
     </ol>
-    <div class="callout ok">担心 token 交出去不安全?token 只被用于收发你在 Business 里授权的会话;你随时可以在 BotFather 里(/mybots → API Token → Revoke)重置它,旧 token 立即失效,主动权始终在你手里。</div>
+    <div class="callout ok">担心 token 交出去不安全?token 加密存储,只被用于收发你在 Business 里授权的会话;你随时可以在 BotFather 里(/mybots → API Token → Revoke)重置它,旧 token 立即失效,主动权始终在你手里。</div>
 
     <h3>💻 方式 B · 自托管(自己的电脑/服务器,数据完全自持)</h3>
     <p>先去 <code>console.anthropic.com</code> → <strong>API Keys</strong> → <strong>Create Key</strong> 拿一个 <code>sk-ant-…</code>(翻译引擎;Billing 充几美元,一条译文约 $0.001,够用很久)。然后:</p>
@@ -248,11 +248,11 @@
     </details>
     <details>
       <summary>在群里发 /bind,bot 没反应</summary>
-      <p>① Group Privacy 没关(第 1b 步),关掉后把 bot 踢出群重新拉进来;② 群还没开启「话题(Topics)」;③ 云托管用户:确认已收到我们的开通邮件(开通前 bot 还没运行);④ 自托管用户:确认终端里 bot 正在运行。</p>
+      <p>① Group Privacy 没关(第 1b 步),关掉后把 bot 踢出群重新拉进来;② 群还没开启「话题(Topics)」;③ 云托管用户:确认 @LingoDeskbot 已回复你「开通成功」(私聊它发 /status 可查);④ 自托管用户:确认终端里 bot 正在运行。</p>
     </details>
     <details>
       <summary>云托管要交出 BOT_TOKEN,安全吗?</summary>
-      <p>token 只被用来收发你在 Telegram Business 里授权范围内的会话,你也可以把私人联系人加入排除列表(第 2 步)。主动权在你:任何时候去 BotFather → /mybots → API Token → <strong>Revoke</strong> 重置,旧 token 立即失效,服务即刻中断。停用前发邮件告知一声即可。</p>
+      <p>token 加密存储,只被用来收发你在 Telegram Business 里授权范围内的会话,你也可以把私人联系人加入排除列表(第 2 步)。主动权在你:任何时候去 BotFather → /mybots → API Token → <strong>Revoke</strong> 重置,旧 token 立即失效,服务即刻中断;想恢复就把新 token 再发给 @LingoDeskbot。</p>
     </details>
     <details>
       <summary>我在话题里打中文,bot 没反应</summary>
