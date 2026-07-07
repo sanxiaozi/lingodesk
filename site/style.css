@@ -1,0 +1,69 @@
+/* LingoDesk 全站公共样式(落地页 + 教程页共用) */
+:root {
+  --bg: #0d1117;
+  --panel: #161b22;
+  --panel-2: #1c2129;
+  --border: #2d333b;
+  --text: #e6edf3;
+  --muted: #9198a1;
+  --accent: #2ea6ff;   /* Telegram 蓝 */
+  --accent-2: #34d399;
+  --warn: #f59e0b;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  line-height: 1.8;
+}
+code {
+  background: var(--panel-2); border: 1px solid var(--border); border-radius: 5px;
+  padding: 1px 7px; font-size: 13.5px; font-family: "SF Mono", Menlo, Consolas, monospace;
+  color: #a5d6ff; word-break: break-all;
+}
+
+/* 页头(两页一致) */
+header { padding: 24px 0; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px 16px; }
+.logo { font-size: 19px; font-weight: 700; text-decoration: none; color: var(--text); white-space: nowrap; }
+.logo span { color: var(--accent); }
+nav { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; }
+nav a { color: var(--muted); font-size: 14px; text-decoration: none; white-space: nowrap; }
+nav a:hover { color: var(--text); }
+nav a.active { color: var(--accent); }
+@media (max-width: 480px) {
+  header { padding: 18px 0; }
+  .logo { font-size: 17px; }
+  nav { gap: 12px; }
+  nav a { font-size: 13px; }
+}
+
+/* 语言切换器 */
+.lang-switch {
+  display: flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden;
+}
+.lang-switch a {
+  padding: 3px 11px; font-size: 12.5px; color: var(--muted); text-decoration: none;
+}
+.lang-switch a + a { border-left: 1px solid var(--border); }
+.lang-switch a.on { background: var(--panel-2); color: var(--text); font-weight: 600; }
+
+/* 按钮体系 */
+.btn {
+  display: inline-block; padding: 14px 34px; border-radius: 10px;
+  font-size: 17px; font-weight: 600; text-decoration: none; text-align: center;
+  background: var(--accent); color: #fff;
+}
+.btn:hover { filter: brightness(1.1); }
+.btn.ghost {
+  background: transparent; color: var(--accent);
+  border: 1px solid var(--accent);
+}
+.btn.ghost:hover { background: rgba(46, 166, 255, .1); filter: none; }
+
+/* 页脚(两页一致) */
+footer {
+  border-top: 1px solid var(--border); margin-top: 48px;
+  padding: 26px 0 40px; text-align: center; color: var(--muted); font-size: 13px;
+}
+footer a { color: var(--muted); }

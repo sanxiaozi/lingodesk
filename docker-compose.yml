@@ -1,0 +1,13 @@
+services:
+  lingodesk:
+    build: .
+    container_name: lingodesk
+    restart: unless-stopped
+    # 全部配置放宿主机 .env(见 .env.example);DATABASE_URL/STORAGE_DIR 固定到挂载卷,勿改
+    env_file: .env
+    environment:
+      DATABASE_URL: file:/app/data/lingodesk.db
+      STORAGE_DIR: /app/storage
+    volumes:
+      - ./data:/app/data       # SQLite 数据库
+      - ./storage:/app/storage # 媒体文件存档

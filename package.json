@@ -8,6 +8,7 @@
     "dev": "tsx watch src/main.ts",
     "start": "tsx src/main.ts",
     "typecheck": "tsc --noEmit",
+    "ids": "tsx scripts/ids.ts",
     "db:push": "prisma db push"
   },
   "dependencies": {
