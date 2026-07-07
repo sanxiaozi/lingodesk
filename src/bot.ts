@@ -48,6 +48,17 @@ export async function loadSavedState(): Promise<void> {
     const f = await getAppState("forumChatId");
     if (f) forumChatId = Number(f);
   }
+  // 有连接但没 owner(用户绑定 Chatbots 发生在 bot 启动之前,business_connection 事件收不到)→ 主动补查
+  if (connectionId && !ownerUserId) {
+    try {
+      const bc = await bot.api.raw.getBusinessConnection({ business_connection_id: connectionId });
+      ownerUserId = Number(bc.user.id);
+      await setAppState("ownerUserId", String(bc.user.id));
+      console.log(`🔎 已从 Business 连接补查 owner=${ownerUserId}`);
+    } catch (e) {
+      console.warn("补查 business connection 失败(等下一个事件自动捕获):", e instanceof Error ? e.message : e);
+    }
+  }
 }
 
 /** 绑定控制台论坛群并持久化 */
