@@ -171,7 +171,7 @@
       <span class="chip hl">Business Mode</span><span class="arr">→</span>
       <span class="chip hl">Turn on</span>
     </div>
-    <div class="callout warn">Without Business Mode your bot <strong>won't even show up</strong> in the Telegram Business chatbot list in Step 2. This is the single most common blocker.</div>
+    <div class="callout warn">Without Business Mode, Telegram shows a popup — <strong>"This bot doesn't support Telegram Business yet"</strong> — when you try to add it in Step 2. It's the single most common blocker. Flip the switch: it takes effect instantly, no need to recreate the bot; just retry adding it.</div>
 
     <h3>1b. Turn off Group Privacy (required)</h3>
     <div class="path">
@@ -259,6 +259,10 @@
     <details>
       <summary>A customer wrote to me but nothing appears in the console group</summary>
       <p>Check in order: ① BotFather → Business Mode is turned on (Step 1a); ② Telegram Business → Chatbots has your bot linked and that chat is within scope (Step 2); ③ the bot is a group admin with "Manage Topics" (Step 3); ④ the console group is bound — send <code>/bind</code> in it; ⑤ self-hosters: the bot process is still running without errors.</p>
+    </details>
+    <details>
+      <summary>Popup when adding the bot: "This bot doesn't support Telegram Business yet"</summary>
+      <p>Business Mode isn't enabled in BotFather (Step 1a). Go to @BotFather → /mybots → your bot → Bot Settings → Business Mode → <strong>Turn on</strong>. It takes effect <strong>instantly</strong> — no need to recreate the bot or resubmit the token; just go back to Telegram Business → Chatbots and add it again. Cloud-hosted users can DM @LingoDeskbot /status to double-check this item.</p>
     </details>
     <details>
       <summary>I send /bind in the group and nothing happens</summary>

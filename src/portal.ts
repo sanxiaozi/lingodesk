@@ -7,7 +7,7 @@
  */
 import type { Bot } from "grammy";
 import { config } from "./config.js";
-import { encrypt } from "./crypto.js";
+import { encrypt, decrypt } from "./crypto.js";
 import {
   getTenant,
   getTenantByBotId,
@@ -34,17 +34,34 @@ const WELCOME = [
   "其它命令:/status 查看状态 · /native <语种码> 设置你的母语(默认中文)",
 ].join("\n");
 
-/** 调 getMe 校验 token,返回 bot 身份或 null */
-async function validateToken(token: string): Promise<{ id: string; username: string } | null> {
+/** 调 getMe 校验 token,返回 bot 身份(含是否开了 Business Mode)或 null */
+async function validateToken(token: string): Promise<{ id: string; username: string; canBusiness: boolean } | null> {
   try {
     const r = await fetch(`https://api.telegram.org/bot${token}/getMe`);
-    const j = (await r.json()) as { ok: boolean; result?: { id: number; username?: string } };
+    const j = (await r.json()) as {
+      ok: boolean;
+      result?: { id: number; username?: string; can_connect_to_business?: boolean };
+    };
     if (!j.ok || !j.result) return null;
-    return { id: String(j.result.id), username: j.result.username ?? "" };
+    return {
+      id: String(j.result.id),
+      username: j.result.username ?? "",
+      canBusiness: j.result.can_connect_to_business === true,
+    };
   } catch {
     return null;
   }
 }
+
+/** 用户最常卡的坑:BotFather 没开 Business Mode 时,Telegram 会弹「此机器人暂不支持 Telegram 企业版」 */
+const BUSINESS_MODE_FIX = [
+  "⚠️ 检测到你的 bot 还没开启 Business Mode —— 绑定时 Telegram 会提示「此机器人暂不支持 Telegram 企业版」。",
+  "",
+  "修复只要 20 秒,去 @BotFather 里:",
+  "/mybots → 选你的 bot → Bot Settings → Business Mode → Turn on",
+  "",
+  "开启立即生效,不用重发 token;开完直接去 Telegram Business → Chatbots 重新添加即可。发 /status 可复查。",
+].join("\n");
 
 export function attachPortal(bot: Bot): void {
   bot.on("message:text", async (ctx, next) => {
@@ -105,10 +122,19 @@ export function attachPortal(bot: Bot): void {
         return;
       }
       const u = await tenantUsage(t.id);
+      // 实时复查 Business Mode(用户开关 BotFather 后无事件,只能主动查)
+      const live = await validateToken(decrypt(t.botToken)).catch(() => null);
+      const bizMode =
+        live === null
+          ? "❓ 暂时查不到(稍后再试)"
+          : live.canBusiness
+            ? "✅ 已开启"
+            : "❌ 未开启 → BotFather → /mybots → Bot Settings → Business Mode → Turn on";
       await ctx.reply(
         [
           `🤖 你的 bot:@${t.botUsername}`,
           `状态:${t.status === "active" ? (isRunning(t.id) ? "🟢 运行中" : "🟡 启动中") : `⛔ 已停用(${t.statusNote})`}`,
+          `Business Mode:${bizMode}`,
           `Business 连接:${t.connId ? "✅" : "❌ 去 Telegram Business → Chatbots 绑定你的 bot"}`,
           `控制台群:${t.forumChatId ? "✅ 已绑定" : "❌ 建群拉入你的 bot,群里发 /bind"}`,
           `母语:${t.nativeLang}(/native <码> 可改)`,
@@ -174,18 +200,18 @@ export function attachPortal(bot: Bot): void {
       });
       await startTenant(tenant);
       await delToken;
-      await ctx.reply(
-        [
-          `🎉 开通成功!你的翻译中继 @${me.username} 已在云端运行。(你发的 token 消息我已删除)`,
-          "",
-          "接下来两步(手机上完成,图文版:lingodesk.org/setup/):",
-          `1️⃣ 设置 → Telegram Business → Chatbots → 绑定 @${me.username},打开「回复消息」权限`,
-          `2️⃣ 新建一个群、开启「话题(Topics)」、拉入 @${me.username} 设为管理员(勾「管理话题」),群里发 /bind`,
-          "",
-          "完成后让任何人用外语私聊你试一条,双语卡片就会弹进群里。/status 随时查进度。",
-        ].join("\n"),
-        { link_preview_options: { is_disabled: true } },
-      );
+      const steps = [
+        `🎉 开通成功!你的翻译中继 @${me.username} 已在云端运行。(你发的 token 消息我已删除)`,
+        "",
+        "接下来两步(手机上完成,图文版:lingodesk.org/setup/):",
+        `1️⃣ 设置 → Telegram Business → Chatbots → 绑定 @${me.username},打开「回复消息」权限`,
+        `2️⃣ 新建一个群、开启「话题(Topics)」、拉入 @${me.username} 设为管理员(勾「管理话题」),群里发 /bind`,
+        "",
+        "完成后让任何人用外语私聊你试一条,双语卡片就会弹进群里。/status 随时查进度。",
+      ];
+      // 最高频卡点前置拦截:Business Mode 没开就把修复指引顶在最前面
+      if (!me.canBusiness) steps.unshift(BUSINESS_MODE_FIX, "");
+      await ctx.reply(steps.join("\n"), { link_preview_options: { is_disabled: true } });
       console.log(`🎫 新租户开通:${uid}(@${ctx.from.username ?? "?"})→ bot @${me.username}`);
       return;
     }

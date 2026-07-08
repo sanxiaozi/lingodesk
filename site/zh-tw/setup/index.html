@@ -157,7 +157,7 @@
       <span class="chip hl">Business Mode</span><span class="arr">→</span>
       <span class="chip hl">Turn on</span>
     </div>
-    <div class="callout warn">不開 Business Mode,第 2 步在 Telegram Business 的機器人清單裡<strong>根本搜不到</strong>你的 bot。這是最常見的卡點。</div>
+    <div class="callout warn">不開 Business Mode,第 2 步新增 bot 時 Telegram 會跳出<strong>「此機器人暫不支援 Telegram 企業版」</strong>的提示——這是全流程最常見的卡點。看到這個提示就回到本步驟把開關打開:立即生效,不用重建 bot,回去重新新增即可。</div>
 
     <h3>1b. 關閉 Group Privacy(必做)</h3>
     <div class="path">
@@ -245,6 +245,10 @@
     <details>
       <summary>客戶發訊息了,控制台群什麼都不彈</summary>
       <p>按順序檢查:① BotFather 裡 Business Mode 是否 Turn on(第 1a 步);② Telegram Business → Chatbots 是否綁定了 bot、該聊天是否在涵蓋範圍內(第 2 步);③ bot 是否是群管理員且有「管理話題」權限(第 3 步);④ 控制台群是否已綁定 —— 在群裡發一句 <code>/bind</code>;⑤ 自行架設使用者:終端機裡 bot 是否還在跑、有無報錯。</p>
+    </details>
+    <details>
+      <summary>新增機器人時跳出:「此機器人暫不支援 Telegram 企業版」</summary>
+      <p>BotFather 裡沒開 Business Mode(第 1a 步)。去 @BotFather → /mybots → 選你的 bot → Bot Settings → Business Mode → <strong>Turn on</strong>。開啟<strong>立即生效</strong>:不用重建 bot、不用重傳 token,回到 Telegram Business → Chatbots 重新新增即可。雲端託管使用者可私訊 @LingoDeskbot 發 /status 複查這一項。</p>
     </details>
     <details>
       <summary>在群裡發 /bind,bot 沒反應</summary>
