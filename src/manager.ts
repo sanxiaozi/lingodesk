@@ -58,9 +58,11 @@ export async function startTenant(t: Tenant): Promise<void> {
   await stopTenant(t.id);
   const token = decrypt(t.botToken);
 
+  const notify = (text: string) => notifyTenant(t.id, text);
+
   if (portalBot && token === config.botToken) {
     // 官方门户 bot 兼任该租户的中继:同一实例挂两套 handler(中继在 portal 之前挂,见 main.ts 顺序)
-    attachRelay(portalBot, t.id);
+    attachRelay(portalBot, t.id, notify);
     running.set(t.id, portalBot);
     portalTenantId = t.id;
     console.log(`[${t.id}] ▶️ 中继挂载到官方门户实例(@${t.botUsername})`);
@@ -68,7 +70,7 @@ export async function startTenant(t: Tenant): Promise<void> {
   }
 
   const b = new Bot(token);
-  attachRelay(b, t.id);
+  attachRelay(b, t.id, notify);
   running.set(t.id, b);
   void b
     .start({

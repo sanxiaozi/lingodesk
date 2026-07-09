@@ -20,6 +20,7 @@ model Tenant {
   username    String    @default("") // 提交者 @username
   nativeLang  String    @default("zh") // 租户母语(入站译入的目标语,ISO 639-1)
   connId      String    @default("") // 最新 business_connection_id(事件/消息实时刷新)
+  canReply    Boolean   @default(true) // 连接是否带「回复消息」权限(can_reply,事件刷新)
   ownerUserId String    @default("") // Business 侧 owner user.id(以 business_connection 事件为准)
   forumChatId String? // 控制台论坛群 chat_id(字符串存,防 Int32 溢出;/bind 绑定)
   status      String    @default("active") // active / disabled

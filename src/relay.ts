@@ -59,8 +59,8 @@ interface PendingOut {
   original: string;
 }
 
-/** 把整套中继 handler 挂到 bot 实例上(每租户一份闭包状态) */
-export function attachRelay(bot: Bot, tenantId: string): void {
+/** 把整套中继 handler 挂到 bot 实例上(每租户一份闭包状态)。notify=经门户私聊提醒租户(可选) */
+export function attachRelay(bot: Bot, tenantId: string, notify?: (text: string) => Promise<void>): void {
   // 开场白定时器(内存,重启丢失可接受,延迟仅 30s)
   const greetTimers = new Map<string, ReturnType<typeof setTimeout>>();
   // 出站待确认译文(预览 → 确认后才发客户),内存存储,重启失效
@@ -124,9 +124,20 @@ export function attachRelay(bot: Bot, tenantId: string): void {
   // ── 动态捕获 business_connection(连接建立/权限变更) ─────────────────
   bot.on("business_connection", async (ctx) => {
     const bc = ctx.businessConnection;
-    await setTenantConn(tenantId, bc.id, String(bc.user.id)).catch((e) => console.error(`[${tenantId}]`, e));
     const canReply = bc.rights?.can_reply ?? false;
+    await setTenantConn(tenantId, bc.id, String(bc.user.id), canReply).catch((e) => console.error(`[${tenantId}]`, e));
     console.log(`[${tenantId}] 🔗 业务连接更新:owner=${bc.user.id} can_reply=${canReply} enabled=${bc.is_enabled}`);
+    // 绑定了但没给「回复消息」权限 = 能收不能发,主动提醒(等到发送失败就晚了)
+    if (bc.is_enabled && !canReply && notify) {
+      await notify(
+        [
+          "⚠️ 检测到你绑定了 bot 但没打开「回复消息」权限 —— 现在能收到翻译,但点「发送给客户」会失败。",
+          "",
+          "修复:设置 → Telegram Business → 聊天自动化(Chatbots) → 选中你的 bot → 打开「回复消息(Reply to messages)」权限。",
+          "开完权限立即生效,回到话题里重新点发送即可。",
+        ].join("\n"),
+      );
+    }
   });
 
   // ── 零配置绑定:bot 被拉进开启话题的群 → 自动绑定为控制台 ──────────────
@@ -480,7 +491,9 @@ export function attachRelay(bot: Bot, tenantId: string): void {
       console.error(`[${tenantId}] 发送失败:`, e);
       const em = e instanceof Error ? e.message : "";
       let tip = "发送失败,稍后再试。";
-      if (em.includes("BUSINESS_PEER_USAGE_MISSING") || em.includes("BUSINESS_CHAT_INACTIVE") || em.includes("PEER_ID_INVALID")) {
+      if (em.includes("BUSINESS_PEER_INVALID")) {
+        tip = "发送被拒:多半是没开「回复消息」权限。去 设置→Telegram Business→聊天自动化→你的 bot→打开「回复消息」;也检查该客户是否在 bot 可访问的聊天范围内。改完重新点发送,草稿已保留。";
+      } else if (em.includes("BUSINESS_PEER_USAGE_MISSING") || em.includes("BUSINESS_CHAT_INACTIVE") || em.includes("PEER_ID_INVALID")) {
         tip = "该客户超过 24 小时没往来,Telegram 不让 bot 主动发起(防滥用硬规则)。让 TA 先发一句,或你手动回这次。草稿已保留。";
       } else if (em.includes("business connection not found") || em.includes("BUSINESS_CONNECTION_INVALID")) {
         tip = "Business 连接失效,让客户发条消息刷新或去 Chatbots 重连。草稿已保留。";

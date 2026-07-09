@@ -278,6 +278,10 @@
       <p>同一 token 有两个实例在跑。找到并停掉旧进程(<code>Ctrl+C</code> 或 <code>pkill -f "tsx.*main.ts"</code>),等十秒再启动。</p>
     </details>
     <details>
+      <summary>点「发送给客户」提示发送失败</summary>
+      <p>按概率排查:① <strong>「回复消息」权限没开</strong>(最常见)——设置 → Telegram Business → 聊天自动化(Chatbots)→ 选中你的 bot → 打开<strong>「回复消息(Reply to messages)」</strong>,不开则 bot 能收不能发;② 该客户不在 bot「可访问的聊天」范围内(同一页面检查);③ 对方超过 24 小时没发过消息,Telegram 不允许 bot 主动发起——让对方先发一句。云托管用户私聊 @LingoDeskbot 发 /status,「回复权限」一行会直接告诉你答案。</p>
+    </details>
+    <details>
       <summary>点「发送给客户」报错:客户太久没往来</summary>
       <p>Telegram 限制:太久没互动的对话,bot 不能替你主动发起(报 <code>BUSINESS_PEER_USAGE_MISSING</code>)。让对方先随便发一句激活,或这一次你在手机上手动回。</p>
     </details>

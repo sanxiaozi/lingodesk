@@ -60,11 +60,11 @@ export function setTenantForum(id: string, forumChatId: string) {
   return prisma.tenant.update({ where: { id }, data: { forumChatId } });
 }
 
-/** business_connection 事件:刷新连接与 owner */
-export function setTenantConn(id: string, connId: string, ownerUserId?: string) {
+/** business_connection 事件:刷新连接、owner 与回复权限 */
+export function setTenantConn(id: string, connId: string, ownerUserId?: string, canReply?: boolean) {
   return prisma.tenant.update({
     where: { id },
-    data: { connId, ownerUserId: ownerUserId ?? undefined },
+    data: { connId, ownerUserId: ownerUserId ?? undefined, canReply: canReply ?? undefined },
   });
 }
 

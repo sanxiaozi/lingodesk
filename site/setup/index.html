@@ -292,6 +292,10 @@
       <p>Two instances are running on the same token. Find and stop the old process (<code>Ctrl+C</code> or <code>pkill -f "tsx.*main.ts"</code>), wait ten seconds, start again.</p>
     </details>
     <details>
+      <summary>"Send to customer" fails with a generic error</summary>
+      <p>Check in order of likelihood: ① <strong>the "Reply to messages" permission is off</strong> (most common) — Settings → Telegram Business → Chat Automation (Chatbots) → your bot → enable <strong>"Reply to messages"</strong>; without it the bot can read but never send; ② the customer's chat isn't within the bot's accessible-chats scope (same page); ③ the contact hasn't messaged you in over 24 hours — Telegram blocks bot-initiated sends; ask them to send anything first. Cloud-hosted users: DM @LingoDeskbot /status — the "reply permission" line gives you the answer directly.</p>
+    </details>
+    <details>
       <summary>"Send to customer" fails: contact inactive too long</summary>
       <p>A Telegram restriction: if a conversation has been idle too long, the bot can't initiate on your behalf (<code>BUSINESS_PEER_USAGE_MISSING</code>). Ask them to send anything to reactivate, or reply manually from your phone this once.</p>
     </details>
