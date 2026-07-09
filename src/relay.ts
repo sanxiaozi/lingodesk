@@ -480,8 +480,8 @@ export function attachRelay(bot: Bot, tenantId: string): void {
       console.error(`[${tenantId}] 发送失败:`, e);
       const em = e instanceof Error ? e.message : "";
       let tip = "发送失败,稍后再试。";
-      if (em.includes("BUSINESS_PEER_USAGE_MISSING") || em.includes("PEER_ID_INVALID")) {
-        tip = "该客户太久没往来,Telegram 不让 bot 主动发起。让 TA 先发一句,或你手动回这次。草稿已保留。";
+      if (em.includes("BUSINESS_PEER_USAGE_MISSING") || em.includes("BUSINESS_CHAT_INACTIVE") || em.includes("PEER_ID_INVALID")) {
+        tip = "该客户超过 24 小时没往来,Telegram 不让 bot 主动发起(防滥用硬规则)。让 TA 先发一句,或你手动回这次。草稿已保留。";
       } else if (em.includes("business connection not found") || em.includes("BUSINESS_CONNECTION_INVALID")) {
         tip = "Business 连接失效,让客户发条消息刷新或去 Chatbots 重连。草稿已保留。";
       }

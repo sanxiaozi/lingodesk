@@ -53,15 +53,15 @@ async function validateToken(token: string): Promise<{ id: string; username: str
   }
 }
 
-/** 用户最常卡的坑:BotFather 没开 Business Mode 时,Telegram 会弹「此机器人暂不支持 Telegram 企业版」 */
+/** 用户最常卡的坑:BotFather 没开 Secretary Mode(旧称 Business Mode)时,绑定弹「此机器人暂不支持 Telegram 企业版」 */
 const BUSINESS_MODE_FIX = [
-  "⚠️ 检测到你的 bot 还没开启 Business Mode —— 绑定时 Telegram 会提示「此机器人暂不支持 Telegram 企业版」。",
+  "⚠️ 检测到你的 bot 还没开启 Secretary Mode(旧称 Business Mode)—— 绑定时 Telegram 会提示「此机器人暂不支持 Telegram 企业版」。",
   "",
   "修复只要 20 秒,在 @BotFather 里操作(两种界面任选):",
-  "① 经典命令版:/mybots → 选你的 bot → Bot Settings → Business Mode → Turn on",
-  "② 新版面板:点 BotFather 输入框旁的蓝色 Open 按钮 → 选你的 bot → Settings → 打开 Business Mode 开关",
+  "① 经典命令版:/mybots → 选你的 bot → Bot Settings → Secretary Mode → Turn on",
+  "② 新版面板:点 BotFather 输入框旁的蓝色 Open 按钮 → 选你的 bot → Settings → Mode Settings → 打开 Secretary Mode 开关",
   "",
-  "(这个开关和 Telegram Premium 无关,人人都能开。)开启立即生效,不用重发 token;开完直接去 Telegram Business → Chatbots 重新添加即可。发 /status 可复查。",
+  "(新旧客户端名字不同:Secretary Mode = Business Mode,找到任意一个即可;和 Telegram Premium 无关,人人都能开。)开启立即生效,不用重发 token;开完去 设置 → Telegram Business → 自动聊天(Chatbots)重新添加即可。发 /status 可复查。",
 ].join("\n");
 
 export function attachPortal(bot: Bot): void {
@@ -130,12 +130,12 @@ export function attachPortal(bot: Bot): void {
           ? "❓ 暂时查不到(稍后再试)"
           : live.canBusiness
             ? "✅ 已开启"
-            : "❌ 未开启 → BotFather → /mybots → Bot Settings → Business Mode → Turn on";
+            : "❌ 未开启 → BotFather → /mybots → Bot Settings → Secretary Mode(旧称 Business Mode)→ Turn on";
       await ctx.reply(
         [
           `🤖 你的 bot:@${t.botUsername}`,
           `状态:${t.status === "active" ? (isRunning(t.id) ? "🟢 运行中" : "🟡 启动中") : `⛔ 已停用(${t.statusNote})`}`,
-          `Business Mode:${bizMode}`,
+          `Secretary Mode(旧称 Business Mode):${bizMode}`,
           `Business 连接:${t.connId ? "✅" : "❌ 去 Telegram Business → Chatbots 绑定你的 bot"}`,
           `控制台群:${t.forumChatId ? "✅ 已绑定" : "❌ 建群拉入你的 bot,群里发 /bind"}`,
           `母语:${t.nativeLang}(/native <码> 可改)`,

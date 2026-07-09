@@ -148,14 +148,14 @@
       <li>最後回覆裡那串 <code>數字:字母</code> 就是 <strong>BOT_TOKEN</strong>,先複製存好。<strong>它等於 bot 的密碼,別發給任何人。</strong></li>
     </ul>
 
-    <h3>1a. 開啟 Business Mode(必做)</h3>
-    <p>還是在 <strong>@BotFather 的聊天裡</strong>操作(注意:不是你 bot 的個人資料頁,也不是手機的 Telegram 設定)。BotFather 有兩套介面,任選其一:</p>
+    <h3>1a. 開啟 Secretary Mode(必做;舊稱 Business Mode)</h3>
+    <p>⚠️ 2026 年 5 月起 Telegram 把這個開關<strong>改名為 Secretary Mode</strong>(秘書模式),舊版用戶端裡可能仍顯示 Business Mode——是同一個東西。在 <strong>@BotFather 的聊天裡</strong>操作(不是你 bot 的個人資料頁,也不是手機的 Telegram 設定),兩套介面任選:</p>
     <p><strong>介面 ①</strong> 經典指令版 —— 直接發訊息:</p>
     <div class="path">
       <span class="chip">/mybots</span><span class="arr">→</span>
       <span class="chip">@my_lingodesk_bot</span><span class="arr">→</span>
       <span class="chip">Bot Settings</span><span class="arr">→</span>
-      <span class="chip hl">Business Mode</span><span class="arr">→</span>
+      <span class="chip hl">Secretary Mode</span><span class="arr">→</span>
       <span class="chip hl">Turn on</span>
     </div>
     <p><strong>介面 ②</strong> 新版管理面板 —— 點 BotFather 輸入框旁的藍色 <strong>Open</strong> 按鈕:</p>
@@ -163,10 +163,11 @@
       <span class="chip">Open(開啟面板)</span><span class="arr">→</span>
       <span class="chip">選你的 bot</span><span class="arr">→</span>
       <span class="chip">Settings</span><span class="arr">→</span>
-      <span class="chip hl">Business Mode 開關打開</span>
+      <span class="chip">Mode Settings</span><span class="arr">→</span>
+      <span class="chip hl">Secretary Mode 開關打開</span>
     </div>
-    <div class="callout ok">找不到這一項?① 確認你是在 <strong>@BotFather 裡</strong>操作,不是在自己 bot 的設定裡;② 這個開關<strong>和 Telegram Premium 無關</strong>——Premium 只影響第 2 步你帳號側的綁定,BotFather 裡人人都能開;③ 用戶端版本太舊也可能看不到,更新 Telegram 後再試。</div>
-    <div class="callout warn">不開 Business Mode,第 2 步新增 bot 時 Telegram 會跳出<strong>「此機器人暫不支援 Telegram 企業版」</strong>的提示——這是全流程最常見的卡點。看到這個提示就回到本步驟把開關打開:立即生效,不用重建 bot,回去重新新增即可。</div>
+    <div class="callout ok">找不到這一項?① 記住它有兩個名字:新版叫 <strong>Secretary Mode</strong>,舊版叫 <strong>Business Mode</strong>,找其中任意一個;② 確認你是在 <strong>@BotFather 裡</strong>操作,不是在自己 bot 的設定裡;③ 這個開關<strong>和 Telegram Premium 無關</strong>——Premium 只影響第 2 步你帳號側的綁定,BotFather 裡人人都能開。</div>
+    <div class="callout warn">不開 Secretary Mode,第 2 步新增 bot 時 Telegram 會跳出<strong>「此機器人暫不支援 Telegram 企業版」</strong>的提示——這是全流程最常見的卡點。看到這個提示就回到本步驟把開關打開:立即生效,不用重建 bot,回去重新新增即可。</div>
 
     <h3>1b. 關閉 Group Privacy(必做)</h3>
     <div class="path">
@@ -187,6 +188,7 @@
       <span class="chip">💼 Telegram Business</span><span class="arr">→</span>
       <span class="chip hl">🤖 聊天機器人 Chatbots</span>
     </div>
+    <p style="color:var(--muted);font-size:13.5px">新版用戶端裡這一項叫<strong>「自動聊天(Chat Automation)」</strong>——名字不同,是同一個入口。</p>
     <ol>
       <li>在搜尋框輸入你的 bot username(如 <code>my_lingodesk_bot</code>),點選它。</li>
       <li><strong>權限:把「回覆訊息 / Reply to messages」打開</strong>——不開的話 bot 只能看不能替你發。</li>

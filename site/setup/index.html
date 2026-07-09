@@ -162,14 +162,14 @@
       <li>That <code>digits:letters</code> string in the last reply is your <strong>BOT_TOKEN</strong>. Copy it somewhere safe. <strong>It is effectively the bot's password — never share it.</strong></li>
     </ul>
 
-    <h3>1a. Turn on Business Mode (required)</h3>
-    <p>Do this <strong>inside the @BotFather chat</strong> (not your bot's profile page, and not your phone's Telegram settings). BotFather has two interfaces — either works:</p>
+    <h3>1a. Turn on Secretary Mode (required; formerly "Business Mode")</h3>
+    <p>⚠️ In May 2026 Telegram <strong>renamed this switch to Secretary Mode</strong>; older clients may still label it Business Mode — same thing. Do this <strong>inside the @BotFather chat</strong> (not your bot's profile page, and not your phone's Telegram settings). Two interfaces — either works:</p>
     <p><strong>Interface ①</strong> Classic commands — just send messages:</p>
     <div class="path">
       <span class="chip">/mybots</span><span class="arr">→</span>
       <span class="chip">@my_lingodesk_bot</span><span class="arr">→</span>
       <span class="chip">Bot Settings</span><span class="arr">→</span>
-      <span class="chip hl">Business Mode</span><span class="arr">→</span>
+      <span class="chip hl">Secretary Mode</span><span class="arr">→</span>
       <span class="chip hl">Turn on</span>
     </div>
     <p><strong>Interface ②</strong> New management panel — tap the blue <strong>Open</strong> button next to BotFather's message box:</p>
@@ -177,10 +177,11 @@
       <span class="chip">Open (panel)</span><span class="arr">→</span>
       <span class="chip">pick your bot</span><span class="arr">→</span>
       <span class="chip">Settings</span><span class="arr">→</span>
-      <span class="chip hl">toggle Business Mode on</span>
+      <span class="chip">Mode Settings</span><span class="arr">→</span>
+      <span class="chip hl">toggle Secretary Mode on</span>
     </div>
-    <div class="callout ok">Can't find it? ① Make sure you're inside <strong>@BotFather</strong>, not your own bot's settings; ② this toggle has <strong>nothing to do with Telegram Premium</strong> — Premium only matters for linking on your account side in Step 2, while anyone can flip this switch in BotFather; ③ a very old Telegram client may hide it — update the app and retry.</div>
-    <div class="callout warn">Without Business Mode, Telegram shows a popup — <strong>"This bot doesn't support Telegram Business yet"</strong> — when you try to add it in Step 2. It's the single most common blocker. Flip the switch: it takes effect instantly, no need to recreate the bot; just retry adding it.</div>
+    <div class="callout ok">Can't find it? ① It has two names: <strong>Secretary Mode</strong> in new clients, <strong>Business Mode</strong> in older ones — look for either; ② make sure you're inside <strong>@BotFather</strong>, not your own bot's settings; ③ the toggle has <strong>nothing to do with Telegram Premium</strong> — Premium only matters for linking on your account side in Step 2; anyone can flip this switch.</div>
+    <div class="callout warn">Without Secretary Mode, Telegram shows a popup — <strong>"This bot doesn't support Telegram Business yet"</strong> — when you try to add it in Step 2. It's the single most common blocker. Flip the switch: it takes effect instantly, no need to recreate the bot; just retry adding it.</div>
 
     <h3>1b. Turn off Group Privacy (required)</h3>
     <div class="path">
@@ -201,6 +202,7 @@
       <span class="chip">💼 Telegram Business</span><span class="arr">→</span>
       <span class="chip hl">🤖 Chatbots</span>
     </div>
+    <p style="color:var(--muted);font-size:13.5px">In newer clients this item is called <strong>"Chat Automation"</strong> — different label, same entry.</p>
     <ol>
       <li>Type your bot's username (e.g. <code>my_lingodesk_bot</code>) in the search box and select it.</li>
       <li><strong>Permissions: enable "Reply to messages"</strong> — without it the bot can read but can never send on your behalf.</li>
