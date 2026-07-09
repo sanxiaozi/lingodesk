@@ -177,12 +177,28 @@ export function attachRelay(bot: Bot, tenantId: string, notify?: (text: string) 
       const fromId = m.from?.id;
       const ownerId = t.ownerUserId || t.id;
 
-      // 租户本人手动回复也会回灌:存档 + 取消待发开场白
+      // 租户本人的消息也会回灌:① 在已有话题里手动回复 ② 主动发起给一个新联系人 → 建话题,之后可在控制台继续聊。
+      // 这样不必等对方先来消息:你在真人号对任意人说句话,TA 就出现在控制台。
       if (fromId !== undefined && String(fromId) === ownerId) {
-        cancelGreeting(String(m.chat.id));
-        const contact = await getContact(tenantId, String(m.chat.id));
-        if (contact && contact.threadId != null && m.text) {
-          await ctx.api.sendMessage(forum, `📝 [你手动回复] ${m.text}`, { message_thread_id: contact.threadId });
+        const peerId = String(m.chat.id);
+        cancelGreeting(peerId);
+        let contact = await getContact(tenantId, peerId);
+        let justCreated = false;
+        // 主动发起:owner 给还没有话题的人发消息 → 建话题(仅一对一私聊,群不建)
+        if (!contact && m.chat.type === "private") {
+          const peerName = displayName({ username: m.chat.username, first_name: m.chat.first_name, id: m.chat.id });
+          const topic = await ctx.api.createForumTopic(forum, peerName);
+          contact = await createContact({ tenantId, tgId: peerId, chatId: peerId, threadId: topic.message_thread_id, name: peerName, connId: msgConn });
+          justCreated = true;
+          await ctx.api.sendMessage(
+            forum,
+            `📤 你主动联系了 ${peerName} —— 已建话题。在这里打${t.nativeLang === "zh" ? "中文" : "母语"}即可继续和 TA 聊(自动翻译成对方语言;对方语种默认英语,可用 /lang 修正)。`,
+            { message_thread_id: topic.message_thread_id },
+          );
+        }
+        if (contact?.threadId != null && m.text) {
+          const tag = justCreated ? "📨 [你刚发出]" : "📝 [你手动回复]";
+          await ctx.api.sendMessage(forum, `${tag} ${m.text}`, { message_thread_id: contact.threadId });
           await logMessage({ contactId: contact.id, direction: "manual", originalText: m.text });
         }
         return;
