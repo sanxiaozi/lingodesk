@@ -57,10 +57,11 @@ async function validateToken(token: string): Promise<{ id: string; username: str
 const BUSINESS_MODE_FIX = [
   "⚠️ 检测到你的 bot 还没开启 Business Mode —— 绑定时 Telegram 会提示「此机器人暂不支持 Telegram 企业版」。",
   "",
-  "修复只要 20 秒,去 @BotFather 里:",
-  "/mybots → 选你的 bot → Bot Settings → Business Mode → Turn on",
+  "修复只要 20 秒,在 @BotFather 里操作(两种界面任选):",
+  "① 经典命令版:/mybots → 选你的 bot → Bot Settings → Business Mode → Turn on",
+  "② 新版面板:点 BotFather 输入框旁的蓝色 Open 按钮 → 选你的 bot → Settings → 打开 Business Mode 开关",
   "",
-  "开启立即生效,不用重发 token;开完直接去 Telegram Business → Chatbots 重新添加即可。发 /status 可复查。",
+  "(这个开关和 Telegram Premium 无关,人人都能开。)开启立即生效,不用重发 token;开完直接去 Telegram Business → Chatbots 重新添加即可。发 /status 可复查。",
 ].join("\n");
 
 export function attachPortal(bot: Bot): void {
