@@ -94,7 +94,7 @@ export function attachRelay(bot: Bot, tenantId: string, notify?: (text: string) 
         const c = await getContact(tenantId, tgId);
         if (!c || c.greeted) return; // 期间已破冰
         const t = await getTenant(tenantId);
-        const conn = connId ?? t?.connId;
+        const conn = t?.connId ?? connId; // 租户最新连接优先(owner 重连后旧 id 会失效)
         if (!conn) return;
         const g = config.greeting;
         await bot.api.sendMessage(Number(chatId), g, { business_connection_id: conn });
@@ -371,7 +371,7 @@ export function attachRelay(bot: Bot, tenantId: string, notify?: (text: string) 
     const contact = await getContactByThread(tenantId, threadId);
     if (!contact) return; // 非客户 Topic(General 等),不响应
 
-    const conn = contact.connId ?? t.connId;
+    const conn = t.connId ?? contact.connId; // 租户最新连接优先(owner 重连后旧 id 会失效)
 
     // 出站文件:在客户 Topic 里发文件/视频/图 → 经 Business 转发给客户 + 存档
     const outDoc = ctx.message.document;
@@ -492,20 +492,36 @@ export function attachRelay(bot: Bot, tenantId: string, notify?: (text: string) 
       return;
     }
     const t = await getTenant(tenantId);
-    const conn = p.connId ?? t?.connId;
+    const conn = t?.connId ?? p.connId; // 租户最新连接优先(owner 重连后草稿里的旧 id 会失效)
     if (!conn) {
       await ctx.answerCallbackQuery("尚无 business_connection,去 Chatbots 重连一下。");
       return;
     }
-    try {
-      await ctx.api.sendMessage(Number(p.chatId), p.translated, { business_connection_id: conn });
+    const doSend = async (cid: string) => {
+      await ctx.api.sendMessage(Number(p.chatId), p.translated, { business_connection_id: cid });
       await ctx.editMessageText(`✅ 已发送 → (${p.lang}) ${p.translated}`);
       await logMessage({ contactId: p.contactId, direction: "out", originalText: p.translated, originalLang: p.lang, nativeText: p.original });
       pendingOut.delete(token);
+    };
+    try {
+      await doSend(conn);
       await ctx.answerCallbackQuery("已发送");
     } catch (e) {
-      console.error(`[${tenantId}] 发送失败:`, e);
       const em = e instanceof Error ? e.message : "";
+      // 连接失效:多半是 owner 刚去 Chatbots 重连过、草稿里的 conn 已旧 —— 拉租户最新 conn 自动重发一次
+      if (em.includes("business connection not found") || em.includes("BUSINESS_CONNECTION_INVALID")) {
+        const fresh = (await getTenant(tenantId))?.connId;
+        if (fresh && fresh !== conn) {
+          try {
+            await doSend(fresh);
+            await ctx.answerCallbackQuery("已发送");
+            return;
+          } catch (e2) {
+            console.error(`[${tenantId}] 用最新连接重发仍失败:`, e2);
+          }
+        }
+      }
+      console.error(`[${tenantId}] 发送失败:`, e);
       let tip = "发送失败,稍后再试。";
       if (em.includes("BUSINESS_PEER_INVALID")) {
         tip = "发送被拒:多半是没开「回复消息」权限。去 设置→Telegram Business→聊天自动化→你的 bot→打开「回复消息」;也检查该客户是否在 bot 可访问的聊天范围内。改完重新点发送,草稿已保留。";
