@@ -160,6 +160,21 @@ export function attachPortal(bot: Bot): void {
       return;
     }
 
+    if (text === "/bind" || text.startsWith("/bind@")) {
+      const t = await getTenant(uid);
+      await ctx.reply(
+        t
+          ? [
+              "「/bind」要发在你的控制台群里,不是发给我 🙂",
+              "",
+              `顺序:新建一个群 → 群设置开启「话题(Topics)」→ 拉入你的 bot @${t.botUsername} 并设为管理员(勾「管理话题」)→ 在那个群里发 /bind。`,
+              "发 /status 可以看你现在卡在哪一步。",
+            ].join("\n")
+          : "你还没开通 🙂 先把你在 @BotFather 创建的 bot token 发给我,发 /start 看完整引导。",
+      );
+      return;
+    }
+
     if (text === "/enable") {
       const t = await getTenant(uid);
       if (!t) {

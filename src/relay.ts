@@ -315,9 +315,11 @@ export function attachRelay(bot: Bot, tenantId: string): void {
   bot.on("message", async (ctx, next) => {
     if (ctx.from?.id === ctx.me.id) return;
 
-    // /bind:把当前群绑定/换绑为控制台(仅租户本人;必须是开启话题的超级群)
+    // /bind:把当前群绑定/换绑为控制台(仅租户本人;必须是开启话题的超级群)。
+    // 私聊里的 /bind 交给门户回指引(在共享实例上 next() 流向 portal),别在这里误导。
     const rawText = ctx.message.text?.trim();
     if (rawText === "/bind" || rawText?.startsWith("/bind@")) {
+      if (ctx.chat.type === "private") return next();
       const t = await getTenant(tenantId);
       if (!t) return next();
       if (String(ctx.from?.id) !== (t.ownerUserId || t.id)) {
