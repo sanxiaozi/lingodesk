@@ -1,0 +1,24 @@
+# 官网自动部署:push 到 main 且 site/ 有变更 → 发布到 Cloudflare Pages
+# 需要仓库 Secrets(Settings → Secrets and variables → Actions):
+#   CLOUDFLARE_API_TOKEN  — dash.cloudflare.com → My Profile → API Tokens → Create Token
+#                            (模板选「Edit Cloudflare Workers」或自定义授予 Pages:Edit)
+#   CLOUDFLARE_ACCOUNT_ID — Dashboard 右侧栏可见
+name: Deploy site
+
+on:
+  push:
+    branches: [main]
+    paths: ["site/**"]
+  workflow_dispatch: {}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy site --project-name=lingodesk
