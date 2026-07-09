@@ -15,6 +15,14 @@ const ALLOWED_UPDATES = ["business_connection", "business_message", "message", "
 const running = new Map<string, Bot>(); // tenantId -> 实例(含共享门户实例)
 let portalBot: Bot | undefined;
 let portalTenantId: string | undefined; // 官方 bot 兼任中继的租户
+let portalUsername = ""; // 官方门户 bot @username(升级 Pro 的 deep link 用)
+
+export function setPortalUsername(u: string): void {
+  portalUsername = u;
+}
+export function getPortalUsername(): string {
+  return portalUsername;
+}
 
 export function getRunningCount(): number {
   return running.size;

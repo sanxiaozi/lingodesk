@@ -25,6 +25,12 @@ model Tenant {
   forumChatId String? // 控制台论坛群 chat_id(字符串存,防 Int32 溢出;/bind 绑定)
   status      String    @default("active") // active / disabled
   statusNote  String    @default("") // 停用原因(token 失效 / 409 冲突 / 手动)
+  // ── 计费(Telegram Stars 订阅) ──
+  plan        String    @default("free") // free / pro
+  proUntil    DateTime? // Pro 到期时间(续费顺延;到期定时降级 free)
+  subChargeId String    @default("") // 最近订阅的 telegram_payment_charge_id(/paysupport、退款用)
+  usageMonth  String    @default("") // 当前计量月份 "YYYY-MM"(跨月自动重置)
+  usageCount  Int       @default(0) // 当月出站发送条数(免费额度计量)
   contacts    Contact[]
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt

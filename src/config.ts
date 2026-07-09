@@ -37,4 +37,10 @@ export const config = {
   archiveAfterDays: process.env.ARCHIVE_AFTER_DAYS ? Number(process.env.ARCHIVE_AFTER_DAYS) : 7,
   /** 文件本地存档目录 */
   storageDir: process.env.STORAGE_DIR || "storage",
+  /** 是否启用计费(官方云托管设 1;自托管默认关,所有人无限不计费) */
+  billingEnabled: process.env.BILLING_ENABLED === "1",
+  /** Pro 月订阅价格(Telegram Stars) */
+  priceStars: process.env.PRICE_STARS ? Number(process.env.PRICE_STARS) : 500,
+  /** 免费版每月出站发送额度(条) */
+  freeQuota: process.env.FREE_QUOTA ? Number(process.env.FREE_QUOTA) : 300,
 };

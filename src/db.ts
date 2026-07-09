@@ -3,6 +3,7 @@
  * 迁 Postgres 时本文件无需改动,只改 schema.prisma 的 datasource。
  */
 import { PrismaClient, type Tenant, type Contact } from "@prisma/client";
+import { config } from "./config.js";
 
 export const prisma = new PrismaClient();
 export type { Tenant, Contact };
@@ -73,7 +74,7 @@ export function setTenantNativeLang(id: string, nativeLang: string) {
   return prisma.tenant.update({ where: { id }, data: { nativeLang } });
 }
 
-/** 租户消息用量(为计费铺路;从 Message 表按需统计,不另建表) */
+/** 租户消息用量(累计,从 Message 表统计) */
 export async function tenantUsage(id: string): Promise<{ contacts: number; inMsgs: number; outMsgs: number }> {
   const [contacts, inMsgs, outMsgs] = await Promise.all([
     prisma.contact.count({ where: { tenantId: id } }),
@@ -81,6 +82,57 @@ export async function tenantUsage(id: string): Promise<{ contacts: number; inMsg
     prisma.message.count({ where: { direction: "out", contact: { tenantId: id } } }),
   ]);
   return { contacts, inMsgs, outMsgs };
+}
+
+// ── 计费(Telegram Stars 订阅) ────────────────────────────────────────
+
+/** 当前计量月份键 "YYYY-MM" */
+function monthKey(d = new Date()): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+
+/** 本月已用出站条数(跨月视为 0) */
+export function currentUsage(t: Tenant): number {
+  return t.usageMonth === monthKey() ? t.usageCount : 0;
+}
+
+/** 是否已超免费额度(计费开启 + free + 本月用量达标才 true) */
+export function isOverQuota(t: Tenant): boolean {
+  if (!config.billingEnabled || t.plan === "pro") return false;
+  return currentUsage(t) >= config.freeQuota;
+}
+
+/** 出站发送成功后计一条(跨月自动重置为 1) */
+export async function bumpOutbound(tenantId: string): Promise<void> {
+  const t = await prisma.tenant.findUnique({ where: { id: tenantId } });
+  if (!t) return;
+  const mk = monthKey();
+  await prisma.tenant.update({
+    where: { id: tenantId },
+    data: t.usageMonth === mk ? { usageCount: { increment: 1 } } : { usageMonth: mk, usageCount: 1 },
+  });
+}
+
+/** 置为 Pro(订阅成功/续费);proUntil 用 Telegram 给的到期时间 */
+export function setPlanPro(id: string, proUntil: Date, chargeId?: string) {
+  return prisma.tenant.update({
+    where: { id },
+    data: { plan: "pro", proUntil, subChargeId: chargeId ?? undefined },
+  });
+}
+
+/** 降级 free(到期/取消) */
+export function setPlanFree(id: string) {
+  return prisma.tenant.update({ where: { id }, data: { plan: "free", proUntil: null } });
+}
+
+/** 到期未续费的 Pro 自动降级 free(定时调用),返回降级数量 */
+export async function expireStalePro(): Promise<number> {
+  const r = await prisma.tenant.updateMany({
+    where: { plan: "pro", proUntil: { lt: new Date() } },
+    data: { plan: "free", proUntil: null },
+  });
+  return r.count;
 }
 
 // ── 联系人 ────────────────────────────────────────────────────────────

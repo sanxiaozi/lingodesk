@@ -30,7 +30,10 @@ import {
   logMessage,
   createAsset,
   setArchived,
+  isOverQuota,
+  bumpOutbound,
 } from "./db.js";
+import { getPortalUsername } from "./manager.js";
 
 const BIND_OK =
   "✅ 本群已绑定为你的 LingoDesk 控制台。\n客户私聊你的真人号时,这里会自动弹出专属话题和双语卡片;你在话题里打母语即可回复。";
@@ -492,6 +495,18 @@ export function attachRelay(bot: Bot, tenantId: string, notify?: (text: string) 
       return;
     }
     const t = await getTenant(tenantId);
+    // 免费额度门:超额则拦发送(草稿保留),在话题里给升级入口。入站永不受限,不丢客户消息。
+    if (t && isOverQuota(t)) {
+      const thread = ctx.callbackQuery.message?.message_thread_id;
+      const url = `https://t.me/${getPortalUsername()}?start=subscribe`;
+      await ctx.answerCallbackQuery({ text: "本月免费额度已用完", show_alert: true });
+      await ctx.api.sendMessage(
+        Number(t.forumChatId),
+        `🈵 本月免费额度已用完(每月 ${config.freeQuota} 条翻译回复)。升级 Pro 解锁无限 —— 月订阅 ${config.priceStars} ⭐,可随时取消。\n你的这条草稿已保留,升级后回来重新点「发送给客户」即可。`,
+        { message_thread_id: thread, reply_markup: { inline_keyboard: [[{ text: "⭐ 升级 Pro", url }]] } },
+      );
+      return;
+    }
     const conn = t?.connId ?? p.connId; // 租户最新连接优先(owner 重连后草稿里的旧 id 会失效)
     if (!conn) {
       await ctx.answerCallbackQuery("尚无 business_connection,去 Chatbots 重连一下。");
@@ -501,6 +516,7 @@ export function attachRelay(bot: Bot, tenantId: string, notify?: (text: string) 
       await ctx.api.sendMessage(Number(p.chatId), p.translated, { business_connection_id: cid });
       await ctx.editMessageText(`✅ 已发送 → (${p.lang}) ${p.translated}`);
       await logMessage({ contactId: p.contactId, direction: "out", originalText: p.translated, originalLang: p.lang, nativeText: p.original });
+      await bumpOutbound(tenantId); // 计一条出站(免费额度计量)
       pendingOut.delete(token);
     };
     try {

@@ -16,8 +16,23 @@ import {
   setTenantStatus,
   setTenantNativeLang,
   tenantUsage,
+  currentUsage,
+  setPlanPro,
+  setPlanFree,
 } from "./db.js";
 import { startTenant, stopTenant, isRunning, getRunningCount } from "./manager.js";
+import { sendProInvoice, handleSuccessfulPayment, PAYSUPPORT_TEXT } from "./billing.js";
+
+/** 套餐 + 本月额度展示行(计费关时不显示) */
+function planLine(t: { plan: string; proUntil: Date | null } & Record<string, unknown>): string | null {
+  if (!config.billingEnabled) return null;
+  if (t.plan === "pro") {
+    const until = t.proUntil ? ` · 续费至 ${t.proUntil.toISOString().slice(0, 10)}` : "";
+    return `套餐:⭐ Pro(无限)${until}`;
+  }
+  const used = currentUsage(t as never);
+  return `套餐:免费 · 本月出站 ${used}/${config.freeQuota} 条(发 /subscribe 升级 Pro 解锁无限)`;
+}
 
 const TOKEN_RE = /^\d{5,}:[A-Za-z0-9_-]{30,}$/;
 
@@ -74,8 +89,36 @@ export function attachPortal(bot: Bot): void {
     const isAdmin = config.adminUserId !== undefined && uid === config.adminUserId;
 
     // ── 管理命令 ──────────────────────────────────────────────────────
-    if (isAdmin && (text === "/tenants" || text.startsWith("/disable ") || (text.startsWith("/enable ") && text.split(/\s+/)[1]))) {
-      const [cmd, arg] = text.split(/\s+/);
+    if (
+      isAdmin &&
+      (text === "/tenants" ||
+        text.startsWith("/disable ") ||
+        (text.startsWith("/enable ") && text.split(/\s+/)[1]) ||
+        text.startsWith("/grant ") ||
+        text.startsWith("/revoke "))
+    ) {
+      const [cmd, arg, arg2] = text.split(/\s+/);
+      if (cmd === "/grant") {
+        const t = await getTenant(arg!);
+        if (!t) {
+          await ctx.reply("没有这个租户 id。");
+          return;
+        }
+        const months = Number(arg2) || 12;
+        await setPlanPro(t.id, new Date(Date.now() + months * 30 * 86_400_000), "admin_grant");
+        await ctx.reply(`⭐ 已给 ${t.id} @${t.botUsername} 授予 Pro ${months} 个月。`);
+        return;
+      }
+      if (cmd === "/revoke") {
+        const t = await getTenant(arg!);
+        if (!t) {
+          await ctx.reply("没有这个租户 id。");
+          return;
+        }
+        await setPlanFree(t.id);
+        await ctx.reply(`已把 ${t.id} @${t.botUsername} 降为免费。`);
+        return;
+      }
       if (cmd === "/tenants") {
         const list = await getAllTenants();
         if (!list.length) {
@@ -113,6 +156,31 @@ export function attachPortal(bot: Bot): void {
     }
 
     // ── 用户命令 ──────────────────────────────────────────────────────
+    // deep link:控制台超额引导过来的 https://t.me/LingoDeskbot?start=subscribe
+    if (text === "/start subscribe" || text === "/subscribe") {
+      const t = await getTenant(uid);
+      if (!t) {
+        await ctx.reply("先开通再订阅 🙂 把你在 @BotFather 创建的 bot token 发给我,发 /start 看引导。");
+        return;
+      }
+      if (t.plan === "pro") {
+        await ctx.reply("你已经是 Pro 了 ⭐ 翻译额度无限。发 /status 看续费日期,/paysupport 管理订阅。");
+        return;
+      }
+      try {
+        await sendProInvoice(config.botToken, ctx.chat.id);
+      } catch (e) {
+        console.error("发订阅发票失败:", e);
+        await ctx.reply("生成订阅发票失败,稍后再试或发 /paysupport 联系我们。");
+      }
+      return;
+    }
+
+    if (text === "/paysupport") {
+      await ctx.reply(PAYSUPPORT_TEXT, { link_preview_options: { is_disabled: true } });
+      return;
+    }
+
     if (text === "/start" || text === "/help") {
       await ctx.reply(WELCOME, { link_preview_options: { is_disabled: true } });
       return;
@@ -142,8 +210,11 @@ export function attachPortal(bot: Bot): void {
           `回复权限:${t.canReply ? "✅" : "❌ 聊天自动化里选中你的 bot → 打开「回复消息」(不开则能收不能发)"}`,
           `控制台群:${t.forumChatId ? "✅ 已绑定" : "❌ 建群拉入你的 bot,群里发 /bind"}`,
           `母语:${t.nativeLang}(/native <码> 可改)`,
-          `用量:客户 ${u.contacts} · 收 ${u.inMsgs} 条 · 发 ${u.outMsgs} 条`,
-        ].join("\n"),
+          planLine(t),
+          `累计:客户 ${u.contacts} · 收 ${u.inMsgs} 条 · 发 ${u.outMsgs} 条`,
+        ]
+          .filter(Boolean)
+          .join("\n"),
       );
       return;
     }
@@ -236,6 +307,18 @@ export function attachPortal(bot: Bot): void {
     }
 
     // 兜底引导
-    await ctx.reply("没看懂 🙂 发 /start 看开通引导;开通后发 /status 查看状态。");
+    await ctx.reply(
+      config.billingEnabled
+        ? "没看懂 🙂 发 /start 看开通引导;/status 查状态;/subscribe 升级 Pro。"
+        : "没看懂 🙂 发 /start 看开通引导;开通后发 /status 查看状态。",
+    );
   });
+
+  // 订阅支付:预检查(须 10 秒内应答 true,否则不扣款)
+  bot.on("pre_checkout_query", async (ctx) => {
+    await ctx.answerPreCheckoutQuery(true).catch((e) => console.error("pre_checkout 应答失败:", e));
+  });
+
+  // 订阅支付:成功(首购 + 每月自动续费都到这里)
+  bot.on("message:successful_payment", (ctx) => handleSuccessfulPayment(ctx));
 }
