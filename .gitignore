@@ -6,3 +6,6 @@ dist/
 *.db-wal
 *.db-shm
 storage/
+
+# 官网构建产物(源在 web/,scripts/build-site.mjs 生成;Actions 构建后部署)
+/site/

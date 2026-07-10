@@ -1,15 +1,13 @@
-# 官网自动部署 → Cloudflare Pages
-# 现状:CLOUDFLARE_API_TOKEN 未配置时,本工作流「优雅跳过」(绿色通过,不发红叉),
-#       官网实际部署由维护者本机 wrangler 负责(npx wrangler pages deploy site --project-name=lingodesk)。
-# 要启用真·推送即自动部署:仓库 Settings → Secrets and variables → Actions → New repository secret
-#   添加 CLOUDFLARE_API_TOKEN(dash.cloudflare.com → My Profile → API Tokens → 用「Edit Cloudflare Workers」模板)。
-#   account id 已内联,不敏感(仅出现在面板 URL 中),无需再配。
+# 官网自动构建 + 部署 → Cloudflare Pages
+# site/ 是构建产物(gitignore):源在 web/(模板 + i18n 字典 + style.css),scripts/build-site.mjs 渲染 15 语言。
+# 触发:push main 且 web/ 或构建脚本变更 → 自动 build → deploy。
+# CLOUDFLARE_API_TOKEN 未配置时「优雅跳过」(绿色,不发红叉);account id 已内联(不敏感)。
 name: Deploy site
 
 on:
   push:
     branches: [main]
-    paths: ["site/**"]
+    paths: ["web/**", "scripts/build-site.mjs", ".github/workflows/deploy-site.yml"]
   workflow_dispatch: {}
 
 jobs:
@@ -20,11 +18,21 @@ jobs:
     steps:
       - name: Skip notice (no token configured)
         if: env.HAS_TOKEN != 'true'
-        run: echo "ℹ️ 未配置 CLOUDFLARE_API_TOKEN,跳过自动部署。官网由本机 wrangler 手动部署;要启用自动部署请在仓库 Secrets 添加该 token。"
+        run: echo "ℹ️ 未配置 CLOUDFLARE_API_TOKEN,跳过自动部署。要启用请在仓库 Secrets 添加该 token。"
 
       - name: Checkout
         if: env.HAS_TOKEN == 'true'
         uses: actions/checkout@v4
+
+      - name: Setup Node
+        if: env.HAS_TOKEN == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Build site (i18n render)
+        if: env.HAS_TOKEN == 'true'
+        run: node scripts/build-site.mjs
 
       - name: Deploy to Cloudflare Pages
         if: env.HAS_TOKEN == 'true'

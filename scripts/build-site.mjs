@@ -19,7 +19,7 @@ const OUT = join(ROOT, "site");
 const BASE_URL = "https://lingodesk.org";
 
 // 15 界面语言。label = 切换器里的自称;html = <html lang>;dir = 文字方向
-const LANGS = [
+const ALL_LANGS = [
   { code: "en", label: "English", html: "en", dir: "ltr" },
   { code: "zh", label: "简体中文", html: "zh-CN", dir: "ltr" },
   { code: "zh-tw", label: "繁體中文", html: "zh-Hant", dir: "ltr" },
@@ -36,6 +36,9 @@ const LANGS = [
   { code: "ar", label: "العربية", html: "ar", dir: "rtl" },
   { code: "ur", label: "اردو", html: "ur", dir: "rtl" },
 ];
+
+// 只生成有字典文件的语言(现成 en/zh/zh-tw;P2 加 web/i18n/es.json 等即自动纳入,下拉/hreflang 随之扩展)
+const LANGS = ALL_LANGS.filter((l) => existsSync(join(WEB, "i18n", `${l.code}.json`)));
 
 // 页面:模板名 → 输出路径(相对语言根)+ 逻辑 path(切换器/hreflang/跳转用)
 const PAGES = [

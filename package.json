@@ -9,7 +9,8 @@
     "start": "tsx src/main.ts",
     "typecheck": "tsc --noEmit",
     "ids": "tsx scripts/ids.ts",
-    "db:push": "prisma db push"
+    "db:push": "prisma db push",
+    "build:site": "node scripts/build-site.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.105.0",
