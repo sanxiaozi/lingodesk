@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>LingoDesk — 在 Telegram 上用母語和全世界聊天</title>
-<meta name="description" content="LingoDesk 是 Telegram Business 跨語言溝通中繼:客戶訊息自動譯成中文,你打中文自動譯成對方語言、以你本人名義送出。收→譯→回→譯,全自動。">
+<meta name="description" content="LingoDesk 是 Telegram Business 跨語言溝通中繼:客戶訊息自動譯成中文,你打中文自動譯成對方語言、以你本人名義發出。收→譯→回→譯,全自動。">
 <meta name="theme-color" content="#05060c">
 <meta property="og:title" content="LingoDesk — 在 Telegram 上用母語和全世界聊天">
-<meta property="og:description" content="Telegram Business 跨語言溝通中繼。收→譯→回→譯,以你本人名義送出,全自動。">
+<meta property="og:description" content="Telegram Business 跨語言溝通中繼。收→譯→回→譯,以你本人名義發出,全自動。">
 <meta property="og:url" content="https://lingodesk.org/zh-tw/">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌐</text></svg>">
 <link rel="alternate" hreflang="en" href="https://lingodesk.org/">
@@ -16,7 +16,7 @@
 <link rel="alternate" hreflang="x-default" href="https://lingodesk.org/">
 <link rel="stylesheet" href="/style.css">
 <style>
-  /* 落地页专属样式 */
+  /* 落地頁專屬樣式 */
   .wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
   .badge {
     display: inline-flex; align-items: center; gap: 8px;
@@ -33,7 +33,7 @@
   .cta-row { margin-top: 34px; display: flex; gap: 14px; flex-wrap: wrap; }
   .cta-note { margin-top: 14px; color: var(--muted); font-size: 13px; opacity: 0.85; }
 
-  /* Hero 视觉:玻璃控制台 + 悬浮气泡 */
+  /* Hero 視覺:玻璃控制台 + 懸浮氣泡 */
   .stage { position: relative; min-height: 420px; }
   .stage::before {
     content: ""; position: absolute; inset: 8% 4%;
@@ -107,9 +107,12 @@
   .feat h3 { font-size: 16.5px; font-weight: 680; margin-bottom: 5px; }
   .feat p { color: var(--muted); font-size: 14px; }
 
-  /* 两种方式 */
-  .ways { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
-  .way { padding: 34px 30px; position: relative; }
+  /* 兩種方式 */
+  .ways { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; align-items: start; }
+  @media (max-width: 860px) { .ways { grid-template-columns: 1fr; } }
+  .way { padding: 30px 26px; position: relative; }
+  .way .amt { font-size: 30px; font-weight: 760; letter-spacing: -0.02em; margin: 2px 0 2px; }
+  .way .amt span { font-size: 14px; color: var(--muted); font-weight: 500; }
   .way.hot { border: 1px solid transparent; background:
     linear-gradient(180deg, rgba(13, 16, 28, 0.92), rgba(10, 12, 22, 0.92)) padding-box,
     var(--grad) border-box; }
@@ -121,7 +124,7 @@
   .way li::before { content: "✓"; position: absolute; left: 2px; color: var(--accent-2); font-weight: 700; }
   .way .btn { width: 100%; }
 
-  /* 尾部 CTA 带 */
+  /* 尾部 CTA 帶 */
   .final { margin: 84px 0 8px; padding: 58px 32px; text-align: center; position: relative; overflow: hidden; }
   .final::before { content: ""; position: absolute; inset: -40%; background: radial-gradient(50% 50% at 50% 50%, rgba(79, 140, 255, 0.16), transparent 70%); }
   .final > * { position: relative; }
@@ -159,14 +162,14 @@
 
   <section class="hero">
     <div>
-      <span class="badge"><i></i>內測中 · 免費 · 開源</span>
+      <span class="badge"><i></i>免費起步 · 開源 · 隨時取消</span>
       <h1>在 Telegram 上<br>用<em>母語</em>和全世界聊天</h1>
-      <p class="sub">客戶用任何語言私訊你的真人帳號,訊息自動譯成中文送到你的控制台;你打中文,自動譯成對方語言、<strong>以你本人名義</strong>送出。收→譯→回→譯,全自動。</p>
+      <p class="sub">客戶用任何語言私訊你的真人號,訊息自動譯成中文送到你的控制台;你打中文,自動譯成對方語言、<strong>以你本人名義</strong>發出。收→譯→回→譯,全自動。</p>
       <div class="cta-row">
         <a class="btn" href="/zh-tw/setup/">10 分鐘開始使用</a>
-        <a class="btn ghost" href="https://t.me/LingoDeskbot">☁️ @LingoDeskbot 秒開通</a>
+        <a class="btn ghost" href="https://t.me/LingoDeskbot">☁️ 免費開始 · @LingoDeskbot</a>
       </div>
-      <div class="cta-note">無需伺服器、無需程式碼;極客也可自行架設開源版,同一套流程。</div>
+      <div class="cta-note">免費起步,無需伺服器或程式碼。隨時升級 Pro,或自行架設開源版。</div>
     </div>
 
     <div class="stage" aria-hidden="true">
@@ -177,15 +180,15 @@
           <div class="card">
             <span class="tag">🆕 新客戶 · 西班牙語</span><br>
             <span class="orig">Hola, ¿cuánto cuesta el paquete completo?</span><br>
-            🌐 你好,整套方案多少錢?
+            🌐 你好,整套套餐多少錢?
           </div>
           <div class="replyrow">
-            <div class="input">方案 A 100 美元,包含全部功能。</div>
+            <div class="input">套餐 A 100 美元,包含全部功能。</div>
             <div class="send">傳送 ✈️</div>
           </div>
         </div>
       </div>
-      <div class="chip glass">El paquete A cuesta $100… · <b>以你名義已送出 ✓✓</b></div>
+      <div class="chip glass">El paquete A cuesta $100… · <b>以你名義已發出 ✓✓</b></div>
     </div>
   </section>
 
@@ -196,7 +199,7 @@
     <div class="steps">
       <div class="step glass reveal"><span class="n">01</span>
         <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.5 5.1 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.5-6.9A2 2 0 0 0 16.7 4H7.3a2 2 0 0 0-1.8 1.1z"/></svg></div>
-        <h3>客戶私訊你的真人帳號</h3>
+        <h3>客戶私訊你的真人號</h3>
         <p>西語、俄語、阿語……任何語言直達你的帳號,LingoDesk 靜默接收。</p>
       </div>
       <div class="step glass reveal"><span class="n">02</span>
@@ -207,7 +210,7 @@
       <div class="step glass reveal"><span class="n">03</span>
         <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
         <h3>你只管打中文</h3>
-        <p>AI 譯成對方語言,先給你預覽,點擊確認才送出——誤發在結構上不可能。</p>
+        <p>AI 譯成對方語言,先給你預覽,點擊確認才發出——誤發在結構上不可能。</p>
       </div>
       <div class="step glass reveal"><span class="n">04</span>
         <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/></svg></div>
@@ -223,15 +226,15 @@
     <div class="grid" style="margin-top: 40px;">
       <div class="feat glass reveal">
         <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg></div>
-        <div><h3>你的真人帳號 + 你自己的 bot</h3><p>基於 Telegram Business 官方通道,bot 由你建立、token 隨時可撤銷——主權在你,這是設計使然。</p></div>
+        <div><h3>你的真人號 + 你自己的 bot</h3><p>基於 Telegram Business 官方通道,bot 由你建立、token 隨時可撤銷——主權在你,這是設計使然。</p></div>
       </div>
       <div class="feat glass reveal">
         <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg></div>
-        <div><h3>語種自動辨識並鎖定</h3><p>首條訊息即辨識,之後每條回覆自動瞄準;一條指令即可糾正,或切換你自己的母語。</p></div>
+        <div><h3>語種自動識別並鎖定</h3><p>首條訊息即識別,之後每條回覆自動瞄準;一條指令即可糾正,或切換你自己的母語。</p></div>
       </div>
       <div class="feat glass reveal">
         <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg></div>
-        <div><h3>每條譯文,預覽後才送出</h3><p>每條翻譯先給你過目,確認才送出。不確定的表達,改中文重譯即可。</p></div>
+        <div><h3>每條譯文,預覽後才發</h3><p>每條翻譯先給你過目,確認才發出。不確定的表達,改中文重譯即可。</p></div>
       </div>
       <div class="feat glass reveal">
         <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="5" rx="1"/><path d="M4 9v9a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9"/><path d="M10 13h4"/></svg></div>
@@ -241,39 +244,51 @@
   </section>
 
   <section>
-    <div class="kicker reveal">兩種用法</div>
-    <h2 class="title reveal">秒級雲端託管,或完全自持</h2>
-    <div class="ways" style="margin-top: 44px;">
+    <div class="kicker reveal">定價</div>
+    <h2 class="title reveal">免費起步,規模化再上 Pro</h2>
+    <p class="lead reveal">無需伺服器、無需程式碼 —— 手機上 10 分鐘搞定。或自行架設開源版,永久免費。</p>
+    <div class="ways" style="margin-top: 12px;">
+      <div class="way glass reveal">
+        <h3>免費版</h3>
+        <div class="amt">$0 <span>/ 雲端託管</span></div>
+        <ul>
+          <li>每月 300 條翻譯回覆</li>
+          <li>無限聯絡人、全部功能</li>
+          <li>私訊 @LingoDeskbot 秒開通</li>
+          <li>翻譯引擎內建,無需 API Key</li>
+        </ul>
+        <a class="btn ghost" href="https://t.me/LingoDeskbot">免費開始</a>
+      </div>
       <div class="way glass hot reveal">
         <span class="pill">推薦</span>
-        <h3>☁️ 雲端託管</h3>
-        <div class="price">內測期免費 · 秒級開通</div>
+        <h3>Pro</h3>
+        <div class="amt">500 ⭐ <span>/ 月 · ≈NT$220</span></div>
         <ul>
-          <li>無需伺服器、無需程式碼,一部手機搞定</li>
-          <li>把 bot token 私訊傳給 @LingoDeskbot,幾秒開通</li>
-          <li>翻譯引擎由我們提供,不用申請任何 API Key</li>
-          <li>token 隨時可撤銷,主動權始終在你手裡</li>
+          <li>♾️ 無限翻譯額度</li>
+          <li>無限聯絡人、全部功能</li>
+          <li>優先支援</li>
+          <li>Telegram Stars 支付 · 隨時取消</li>
         </ul>
-        <a class="btn" href="https://t.me/LingoDeskbot">透過 @LingoDeskbot 開通</a>
+        <a class="btn" href="https://t.me/LingoDeskbot">透過 @LingoDeskbot 升級</a>
       </div>
       <div class="way glass reveal">
-        <h3>💻 自行架設</h3>
-        <div class="price">永久免費 · MIT 開源</div>
+        <h3>自行架設</h3>
+        <div class="amt">免費 <span>/ 永久 · MIT</span></div>
         <ul>
           <li>自己的機器、自己的資料,完全掌控</li>
           <li><code>docker compose up -d</code> 一條指令上線</li>
           <li>同一套程式碼,自帶多租戶能力</li>
-          <li>隨時從雲端託管「畢業」,零鎖定</li>
+          <li>零鎖定,隨時從雲端託管「畢業」</li>
         </ul>
-        <a class="btn ghost" href="https://github.com/sanxiaozi/lingodesk">GitHub 查看原始碼</a>
+        <a class="btn ghost" href="https://github.com/sanxiaozi/lingodesk">GitHub 檢視原始碼</a>
       </div>
     </div>
   </section>
 
   <section class="final glass reveal">
     <h2>準備好了?10 分鐘跑通。</h2>
-    <p>從建立 bot 到送出第一條跨語言回覆,每一步都有圖文詳解和踩雷提示。</p>
-    <a class="btn" href="/zh-tw/setup/">打開快速上手指南 →</a>
+    <p>從建立 bot 到發出第一條跨語言回覆,每一步都有圖文詳解和踩坑提示。</p>
+    <a class="btn" href="/zh-tw/setup/">開啟快速上手指南 →</a>
   </section>
 
   <footer>

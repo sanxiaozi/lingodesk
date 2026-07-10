@@ -14,10 +14,11 @@ Customers message your **personal Telegram account** in any language. LingoDesk 
 - **Robust**: Claude as the primary engine with optional OpenAI fallback; `business_connection_id` auto-refreshed and persisted; per-contact language lock; topics auto-archive after 7 idle days and revive on new messages
 - **Commands**: `/lang <code>` to correct a contact's language, `/help` for the list
 
-## Two ways to run it
+## Pricing & ways to run
 
-1. **Cloud-hosted (default — no server, no code)**: do the Telegram-side setup from your phone, then DM your bot token to [@LingoDeskbot](https://t.me/LingoDeskbot) — **instant automatic activation**, translation engine included. Follow the illustrated [setup guide](https://lingodesk.org/setup/) (~10 minutes). Free during beta.
-2. **Self-host** — free and open source, quick start below. The same codebase is multi-tenant: your instance can host other users too (they DM their tokens to *your* portal bot).
+- **Free** (cloud-hosted) — 300 translated replies/month, unlimited contacts, all features. Do the Telegram-side setup from your phone, DM your bot token to [@LingoDeskbot](https://t.me/LingoDeskbot) for **instant activation** (translation engine included). See the [setup guide](https://lingodesk.org/setup/) (~10 min).
+- **Pro** — **500 ⭐/month (≈ $7)** via Telegram Stars: unlimited translations + priority support. Cancel anytime.
+- **Self-hosted** — **free forever** (MIT), quick start below. The same codebase is multi-tenant: your instance can host other users too (they DM their tokens to *your* portal bot), and billing is off by default.
 
 ## Self-host requirements
 

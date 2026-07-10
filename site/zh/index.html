@@ -108,8 +108,11 @@
   .feat p { color: var(--muted); font-size: 14px; }
 
   /* 两种方式 */
-  .ways { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
-  .way { padding: 34px 30px; position: relative; }
+  .ways { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; align-items: start; }
+  @media (max-width: 860px) { .ways { grid-template-columns: 1fr; } }
+  .way { padding: 30px 26px; position: relative; }
+  .way .amt { font-size: 30px; font-weight: 760; letter-spacing: -0.02em; margin: 2px 0 2px; }
+  .way .amt span { font-size: 14px; color: var(--muted); font-weight: 500; }
   .way.hot { border: 1px solid transparent; background:
     linear-gradient(180deg, rgba(13, 16, 28, 0.92), rgba(10, 12, 22, 0.92)) padding-box,
     var(--grad) border-box; }
@@ -159,14 +162,14 @@
 
   <section class="hero">
     <div>
-      <span class="badge"><i></i>内测中 · 免费 · 开源</span>
+      <span class="badge"><i></i>免费起步 · 开源 · 随时取消</span>
       <h1>在 Telegram 上<br>用<em>母语</em>和全世界聊天</h1>
       <p class="sub">客户用任何语言私聊你的真人号,消息自动译成中文送到你的控制台;你打中文,自动译成对方语言、<strong>以你本人名义</strong>发出。收→译→回→译,全自动。</p>
       <div class="cta-row">
         <a class="btn" href="/zh/setup/">10 分钟开始使用</a>
-        <a class="btn ghost" href="https://t.me/LingoDeskbot">☁️ @LingoDeskbot 秒开通</a>
+        <a class="btn ghost" href="https://t.me/LingoDeskbot">☁️ 免费开始 · @LingoDeskbot</a>
       </div>
-      <div class="cta-note">无需服务器、无需代码;极客也可自托管开源版,同一套流程。</div>
+      <div class="cta-note">免费起步,无需服务器或代码。随时升级 Pro,或自托管开源版。</div>
     </div>
 
     <div class="stage" aria-hidden="true">
@@ -241,29 +244,41 @@
   </section>
 
   <section>
-    <div class="kicker reveal">两种用法</div>
-    <h2 class="title reveal">秒级云托管,或完全自持</h2>
-    <div class="ways" style="margin-top: 44px;">
+    <div class="kicker reveal">定价</div>
+    <h2 class="title reveal">免费起步,规模化再上 Pro</h2>
+    <p class="lead reveal">无需服务器、无需代码 —— 手机上 10 分钟搞定。或自托管开源版,永久免费。</p>
+    <div class="ways" style="margin-top: 12px;">
+      <div class="way glass reveal">
+        <h3>免费版</h3>
+        <div class="amt">$0 <span>/ 云托管</span></div>
+        <ul>
+          <li>每月 300 条翻译回复</li>
+          <li>无限联系人、全部功能</li>
+          <li>私聊 @LingoDeskbot 秒开通</li>
+          <li>翻译引擎内置,无需 API Key</li>
+        </ul>
+        <a class="btn ghost" href="https://t.me/LingoDeskbot">免费开始</a>
+      </div>
       <div class="way glass hot reveal">
         <span class="pill">推荐</span>
-        <h3>☁️ 云托管</h3>
-        <div class="price">内测期免费 · 秒级开通</div>
+        <h3>Pro</h3>
+        <div class="amt">500 ⭐ <span>/ 月 · ≈¥50</span></div>
         <ul>
-          <li>无需服务器、无需代码,一部手机搞定</li>
-          <li>把 bot token 私聊发给 @LingoDeskbot,几秒开通</li>
-          <li>翻译引擎由我们提供,不用申请任何 API Key</li>
-          <li>token 随时可撤销,主动权始终在你手里</li>
+          <li>♾️ 无限翻译额度</li>
+          <li>无限联系人、全部功能</li>
+          <li>优先支持</li>
+          <li>Telegram Stars 支付 · 随时取消</li>
         </ul>
-        <a class="btn" href="https://t.me/LingoDeskbot">通过 @LingoDeskbot 开通</a>
+        <a class="btn" href="https://t.me/LingoDeskbot">通过 @LingoDeskbot 升级</a>
       </div>
       <div class="way glass reveal">
-        <h3>💻 自托管</h3>
-        <div class="price">永久免费 · MIT 开源</div>
+        <h3>自托管</h3>
+        <div class="amt">免费 <span>/ 永久 · MIT</span></div>
         <ul>
           <li>自己的机器、自己的数据,完全掌控</li>
           <li><code>docker compose up -d</code> 一条命令上线</li>
           <li>同一套代码,自带多租户能力</li>
-          <li>随时从云托管「毕业」,零锁定</li>
+          <li>零锁定,随时从云托管「毕业」</li>
         </ul>
         <a class="btn ghost" href="https://github.com/sanxiaozi/lingodesk">GitHub 查看源码</a>
       </div>

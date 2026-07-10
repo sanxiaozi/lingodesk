@@ -33,9 +33,13 @@
 
 ## M2 — 商业化
 
-- 计费:免费额度(N 条译文/月)+ 订阅(Telegram Stars 或 USDT,复用 biz-bot 的 tron 对账)
-- lingodesk.org 落地页:产品介绍 + 绑定引导 + 定价
-- 用量统计与限额(按租户按月计译文条数)
+✅ 计费上线(2026-07,详见 PRICING.md):
+
+- [x] Telegram Stars 订阅:Free(300 条出站/月)+ Pro 500⭐/月无限;门户发票/自动续费/到期降级
+- [x] 出站额度门(超额跳门户升级,草稿保留,入站不受限)、用量统计、`/subscribe` `/paysupport`、admin `/grant`
+- [x] `BILLING_ENABLED` 开关(自托管默认关);官网三语定价区 + README 更新
+- [ ] 网页 Stripe 年付(Telegram Star 订阅只支持月付,年付/省 App Store 抽成走网页)
+- [ ] 租户级配置(开场白/归档天数)、用量看板、团队档
 
 ## 技术备忘
 

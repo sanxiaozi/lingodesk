@@ -122,8 +122,11 @@
   .feat p { color: var(--muted); font-size: 14px; }
 
   /* 两种方式 */
-  .ways { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
-  .way { padding: 34px 30px; position: relative; }
+  .ways { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; align-items: start; }
+  @media (max-width: 860px) { .ways { grid-template-columns: 1fr; } }
+  .way { padding: 30px 26px; position: relative; }
+  .way .amt { font-size: 30px; font-weight: 760; letter-spacing: -0.02em; margin: 2px 0 2px; }
+  .way .amt span { font-size: 14px; color: var(--muted); font-weight: 500; }
   .way.hot { border: 1px solid transparent; background:
     linear-gradient(180deg, rgba(13, 16, 28, 0.92), rgba(10, 12, 22, 0.92)) padding-box,
     var(--grad) border-box; }
@@ -173,14 +176,14 @@
 
   <section class="hero">
     <div>
-      <span class="badge"><i></i>Private beta · Free · Open source</span>
+      <span class="badge"><i></i>Free plan · Open source · Cancel anytime</span>
       <h1>Chat with the world in your <em>native language</em></h1>
       <p class="sub">Customers write to your personal Telegram in any language. It lands translated into yours; you reply in yours — it reaches them in theirs, <strong>sent as you</strong>. Fully automatic.</p>
       <div class="cta-row">
         <a class="btn" href="/setup/">Set up in 10 minutes</a>
-        <a class="btn ghost" href="https://t.me/LingoDeskbot">☁️ @LingoDeskbot — instant hosted</a>
+        <a class="btn ghost" href="https://t.me/LingoDeskbot">☁️ Start free — @LingoDeskbot</a>
       </div>
-      <div class="cta-note">No server, no code. Or self-host the open source — same setup.</div>
+      <div class="cta-note">Free to start, no server or code. Go Pro anytime, or self-host the open source.</div>
     </div>
 
     <div class="stage" aria-hidden="true">
@@ -255,29 +258,41 @@
   </section>
 
   <section>
-    <div class="kicker reveal">Two ways to run it</div>
-    <h2 class="title reveal">Hosted in seconds, or fully yours</h2>
-    <div class="ways" style="margin-top: 44px;">
+    <div class="kicker reveal">Pricing</div>
+    <h2 class="title reveal">Free to start. Pro when you scale.</h2>
+    <p class="lead reveal">No server, no code — set up from your phone in ~10 minutes. Or self-host the open source, free forever.</p>
+    <div class="ways" style="margin-top: 12px;">
+      <div class="way glass reveal">
+        <h3>Free</h3>
+        <div class="amt">$0 <span>/ cloud-hosted</span></div>
+        <ul>
+          <li>300 translated replies / month</li>
+          <li>Unlimited contacts &amp; all features</li>
+          <li>Activated in seconds via @LingoDeskbot</li>
+          <li>Translation engine included, no API keys</li>
+        </ul>
+        <a class="btn ghost" href="https://t.me/LingoDeskbot">Start free</a>
+      </div>
       <div class="way glass hot reveal">
         <span class="pill">RECOMMENDED</span>
-        <h3>☁️ Cloud-hosted</h3>
-        <div class="price">Free during beta · instant activation</div>
+        <h3>Pro</h3>
+        <div class="amt">500 ⭐ <span>/ month · ≈ $7</span></div>
         <ul>
-          <li>No server, no code — just your phone</li>
-          <li>DM your bot token to @LingoDeskbot, activated in seconds</li>
-          <li>Translation engine included, no API keys</li>
-          <li>Revoke your token any time — you stay in control</li>
+          <li>♾️ Unlimited translations</li>
+          <li>Unlimited contacts &amp; all features</li>
+          <li>Priority support</li>
+          <li>Pay in Telegram Stars · cancel anytime</li>
         </ul>
-        <a class="btn" href="https://t.me/LingoDeskbot">Activate via @LingoDeskbot</a>
+        <a class="btn" href="https://t.me/LingoDeskbot">Go Pro via @LingoDeskbot</a>
       </div>
       <div class="way glass reveal">
-        <h3>💻 Self-hosted</h3>
-        <div class="price">Free forever · MIT licensed</div>
+        <h3>Self-hosted</h3>
+        <div class="amt">Free <span>/ forever · MIT</span></div>
         <ul>
           <li>Your machine, your data — full control</li>
           <li><code>docker compose up -d</code> and you're live</li>
           <li>Same codebase, multi-tenant included</li>
-          <li>Graduate from hosted any time, zero lock-in</li>
+          <li>Zero lock-in, graduate from hosted anytime</li>
         </ul>
         <a class="btn ghost" href="https://github.com/sanxiaozi/lingodesk">View on GitHub</a>
       </div>
