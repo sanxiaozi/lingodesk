@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>關於我們 · 聯絡方式 — LingoDesk</title>
+<meta name="description" content="LingoDesk 讓你在 Telegram 上用母語和全世界做生意——以你本人名義,全自動翻譯。聯絡我們:hello@lingodesk.org">
+<meta name="theme-color" content="#05060c">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌐</text></svg>">
+<link rel="alternate" hreflang="en" href="https://lingodesk.org/about/">
+<link rel="alternate" hreflang="zh-Hans" href="https://lingodesk.org/zh/about/">
+<link rel="alternate" hreflang="zh-Hant" href="https://lingodesk.org/zh-tw/about/">
+<link rel="alternate" hreflang="x-default" href="https://lingodesk.org/about/">
+<link rel="stylesheet" href="/style.css">
+<style>
+  .wrap { max-width: 760px; margin: 0 auto; padding: 0 24px; }
+  .hero { padding: 64px 0 8px; text-align: center; }
+  .hero h1 { font-size: clamp(30px, 4.5vw, 44px); letter-spacing: -0.01em; font-weight: 760; }
+  .hero .tag { color: var(--muted); font-size: 17px; margin-top: 12px; }
+  section { padding: 40px 0 0; }
+  h2 { font-size: 22px; font-weight: 720; margin-bottom: 12px; }
+  p { color: #c6ccd4; font-size: 15.5px; margin-bottom: 14px; }
+  .princ { list-style: none; margin: 8px 0 0; }
+  .princ li { position: relative; padding: 6px 0 6px 28px; color: #c6ccd4; font-size: 15px; }
+  .princ li::before { content: "✦"; position: absolute; left: 2px; color: var(--accent-2); }
+  .contact { margin: 44px 0 8px; padding: 40px 32px; text-align: center; position: relative; overflow: hidden; }
+  .contact::before { content: ""; position: absolute; inset: -40%; background: radial-gradient(50% 50% at 50% 40%, rgba(79, 140, 255, 0.16), transparent 70%); }
+  .contact > * { position: relative; }
+  .contact .k { font-size: 13px; letter-spacing: 0.2em; color: var(--accent); font-weight: 700; }
+  .mail {
+    display: inline-block; margin: 16px 0 6px; font-size: clamp(22px, 4vw, 32px); font-weight: 720;
+    letter-spacing: -0.01em; text-decoration: none;
+    background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .contact .note { color: var(--muted); font-size: 13.5px; margin-bottom: 22px; }
+  .links { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .links a {
+    display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border-radius: 999px;
+    border: 1px solid var(--border); background: var(--panel); color: var(--text); text-decoration: none; font-size: 14px;
+  }
+  .links a:hover { border-color: rgba(255, 255, 255, 0.22); background: var(--panel-2); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a class="logo" href="/zh-tw/">🌐 Lingo<span>Desk</span></a>
+    <nav>
+      <a href="/zh-tw/">首頁</a>
+      <a href="/zh-tw/setup/">快速上手</a>
+      <a href="/zh-tw/about/" class="active">關於我們</a>
+      <div class="lang-switch">
+        <a href="/about/" onclick="localStorage.setItem('ld-lang','en')">EN</a>
+        <a href="/zh/about/" onclick="localStorage.setItem('ld-lang','zh')">简</a>
+        <a href="/zh-tw/about/" class="on" onclick="localStorage.setItem('ld-lang','zh-tw')">繁</a>
+      </div>
+    </nav>
+  </header>
+
+  <section class="hero">
+    <h1>關於 LingoDesk</h1>
+    <p class="tag">在 Telegram 上用母語和全世界聊天、做生意。</p>
+  </section>
+
+  <section>
+    <h2>我們做什麼</h2>
+    <p>LingoDesk 把你的 Telegram 真人帳號變成一張跨語言工作台。客戶用任何語言私訊你,每條訊息都自動譯成中文、彈進該客戶的專屬話題;你只管用中文回覆,它自動譯回對方語言、<strong>以你本人名義</strong>發出。對方全程看不到任何機器人,只看到一個語言流利的你。</p>
+    <p>它為在聊天裡成交的人而生——自由工作者、跨境賣家、外貿和小團隊。對他們來說,一條錯過的、生硬的回覆,就是一個流失的客戶。</p>
+  </section>
+
+  <section>
+    <h2>為什麼不一樣</h2>
+    <ul class="princ">
+      <li><strong>你自己的 bot、你自己的 token。</strong>一切都經過一個你親手建立、隨時可撤銷的 bot——完全掌控,不是黑盒。</li>
+      <li><strong>開源,零鎖定。</strong>MIT 授權。可以交給我們託管,也可以跑在你自己的伺服器上——同一套程式碼,你說了算。</li>
+      <li><strong>小而專注。</strong>一個獨立產品,由真正在意跨境溝通的人打造,不追求不惜代價的增長。</li>
+    </ul>
+  </section>
+
+  <section class="contact glass">
+    <div class="k">聯絡我們</div>
+    <a class="mail" href="mailto:hello@lingodesk.org">hello@lingodesk.org</a>
+    <div class="note">諮詢、回饋、合作,或安裝遇到問題——每一封郵件我們都會看。</div>
+    <div class="links">
+      <a href="https://t.me/LingoDeskbot">💬 @LingoDeskbot</a>
+      <a href="https://github.com/sanxiaozi/lingodesk">💻 GitHub</a>
+      <a href="/zh-tw/setup/">🚀 開始使用</a>
+    </div>
+  </section>
+
+  <footer>
+    <a href="/zh-tw/">首頁</a> · <a href="/zh-tw/setup/">快速上手指南</a> · <a href="https://github.com/sanxiaozi/lingodesk">GitHub</a> · © 2026 LingoDesk
+  </footer>
+</div>
+</body>
+</html>
