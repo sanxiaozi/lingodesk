@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="{{htmlLang}}" dir="{{dir}}" data-lang="{{lang}}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{changelog.title}}</title>
+<meta name="description" content="{{changelog.desc}}">
+<meta name="theme-color" content="#05060c">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌐</text></svg>">
+{{hreflang}}
+{{autoRedirect}}
+<link rel="stylesheet" href="/style.css">
+<style>
+  .wrap { max-width: 720px; margin: 0 auto; padding: 0 24px; }
+  .hero { padding: 56px 0 8px; text-align: center; }
+  .hero h1 { font-size: clamp(28px, 4vw, 40px); letter-spacing: -0.02em; font-weight: 760; }
+  .hero .tag { color: var(--muted); font-size: 16px; margin-top: 10px; }
+  .log { margin: 40px 0 8px; }
+  .entry { position: relative; padding: 0 0 26px 26px; border-inline-start: 1px solid var(--border); }
+  .entry:last-child { border-inline-start-color: transparent; }
+  .entry::before { content: ""; position: absolute; inset-inline-start: -5px; top: 6px; width: 9px; height: 9px; border-radius: 50%; background: var(--grad); box-shadow: 0 0 10px rgba(79, 140, 255, 0.6); }
+  .entry .date { font-size: 12.5px; color: var(--accent); font-weight: 650; letter-spacing: 0.03em; }
+  .entry h3 { font-size: 16.5px; font-weight: 680; margin: 3px 0 5px; letter-spacing: -0.01em; }
+  .entry p { color: var(--muted); font-size: 14.5px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a class="logo" href="{{base}}/">🌐 Lingo<span>Desk</span></a>
+    <nav>
+      <a href="{{base}}/">{{nav.home}}</a>
+      <a href="{{base}}/setup/">{{nav.get_started}}</a>
+      <a href="{{base}}/about/">{{nav.about}}</a>
+      {{langSwitcher}}
+    </nav>
+  </header>
+
+  <section class="hero">
+    <h1>{{changelog.hero_h1}}</h1>
+    <p class="tag">{{changelog.hero_tag}}</p>
+  </section>
+
+  <div class="log">
+    <div class="entry"><div class="date">{{changelog.i1_date}}</div><h3>{{changelog.i1_h}}</h3><p>{{changelog.i1_p}}</p></div>
+    <div class="entry"><div class="date">{{changelog.i2_date}}</div><h3>{{changelog.i2_h}}</h3><p>{{changelog.i2_p}}</p></div>
+    <div class="entry"><div class="date">{{changelog.i3_date}}</div><h3>{{changelog.i3_h}}</h3><p>{{changelog.i3_p}}</p></div>
+    <div class="entry"><div class="date">{{changelog.i4_date}}</div><h3>{{changelog.i4_h}}</h3><p>{{changelog.i4_p}}</p></div>
+    <div class="entry"><div class="date">{{changelog.i5_date}}</div><h3>{{changelog.i5_h}}</h3><p>{{changelog.i5_p}}</p></div>
+    <div class="entry"><div class="date">{{changelog.i6_date}}</div><h3>{{changelog.i6_h}}</h3><p>{{changelog.i6_p}}</p></div>
+    <div class="entry"><div class="date">{{changelog.i7_date}}</div><h3>{{changelog.i7_h}}</h3><p>{{changelog.i7_p}}</p></div>
+    <div class="entry"><div class="date">{{changelog.i8_date}}</div><h3>{{changelog.i8_h}}</h3><p>{{changelog.i8_p}}</p></div>
+  </div>
+
+  <footer>
+    <a href="{{base}}/">{{nav.home}}</a> · <a href="{{base}}/setup/">{{common.footer_setup}}</a> · <a href="https://github.com/sanxiaozi/lingodesk">GitHub</a> · © 2026 LingoDesk
+  </footer>
+</div>
+</body>
+</html>

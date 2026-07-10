@@ -7,6 +7,7 @@
  */
 import type { Bot } from "grammy";
 import { config } from "./config.js";
+import { t, resolveUiLang } from "./i18n.js";
 import { encrypt, decrypt } from "./crypto.js";
 import {
   getTenant,
@@ -21,35 +22,25 @@ import {
   setPlanFree,
 } from "./db.js";
 import { startTenant, stopTenant, isRunning, getRunningCount } from "./manager.js";
-import { sendProInvoice, handleSuccessfulPayment, PAYSUPPORT_TEXT } from "./billing.js";
+import { sendProInvoice, handleSuccessfulPayment, paySupportText } from "./billing.js";
 
 /** 套餐 + 本月额度展示行(计费关时不显示) */
-function planLine(t: { plan: string; proUntil: Date | null } & Record<string, unknown>): string | null {
+function planLine(
+  tenant: { plan: string; proUntil: Date | null } & Record<string, unknown>,
+  lang?: string | null,
+): string | null {
   if (!config.billingEnabled) return null;
-  if (t.plan === "pro") {
-    const until = t.proUntil ? ` · 续费至 ${t.proUntil.toISOString().slice(0, 10)}` : "";
-    return `套餐:⭐ Pro(无限)${until}`;
+  if (tenant.plan === "pro") {
+    const until = tenant.proUntil
+      ? t("portal.plan_pro_until", lang, { date: tenant.proUntil.toISOString().slice(0, 10) })
+      : "";
+    return t("portal.plan_pro", lang, { until });
   }
-  const used = currentUsage(t as never);
-  return `套餐:免费 · 本月出站 ${used}/${config.freeQuota} 条(发 /subscribe 升级 Pro 解锁无限)`;
+  const used = currentUsage(tenant as never);
+  return t("portal.plan_free", lang, { used, quota: config.freeQuota });
 }
 
 const TOKEN_RE = /^\d{5,}:[A-Za-z0-9_-]{30,}$/;
-
-const WELCOME = [
-  "👋 欢迎使用 LingoDesk —— 在 Telegram 上用母语和全世界聊天。",
-  "",
-  "开通只要三步(详细图文:lingodesk.org/setup/):",
-  "1️⃣ 在 @BotFather 创建你自己的 bot(/newbot),并在 Bot Settings 里开启 Secretary Mode(旧称 Business Mode)、关闭 Group Privacy",
-  "2️⃣ 把拿到的 token(形如 123456:ABC...)直接发给我,我立刻为你开通",
-  "3️⃣ 按回复里的指引绑定 Telegram Business(记得打开「回复消息」权限)、建控制台群发 /bind",
-  "",
-  "Send me your bot token from @BotFather to activate. Full guide: lingodesk.org/setup/",
-  "",
-  "💡 双向都行:对方发来会自动弹话题;你也可以在真人号主动对任何人说句话,TA 就出现在控制台,之后在这里打母语继续聊。",
-  "",
-  "其它命令:/status 查看状态 · /native <语种码> 设置你的母语(默认中文)",
-].join("\n");
 
 /** 调 getMe 校验 token,返回 bot 身份(含是否开了 Business Mode)或 null */
 async function validateToken(token: string): Promise<{ id: string; username: string; canBusiness: boolean } | null> {
@@ -70,23 +61,14 @@ async function validateToken(token: string): Promise<{ id: string; username: str
   }
 }
 
-/** 用户最常卡的坑:BotFather 没开 Secretary Mode(旧称 Business Mode)时,绑定弹「此机器人暂不支持 Telegram 企业版」 */
-const BUSINESS_MODE_FIX = [
-  "⚠️ 检测到你的 bot 还没开启 Secretary Mode(旧称 Business Mode)—— 绑定时 Telegram 会提示「此机器人暂不支持 Telegram 企业版」。",
-  "",
-  "修复只要 20 秒,在 @BotFather 里操作(两种界面任选):",
-  "① 经典命令版:/mybots → 选你的 bot → Bot Settings → Secretary Mode → Turn on",
-  "② 新版面板:点 BotFather 输入框旁的蓝色 Open 按钮 → 选你的 bot → Settings → Mode Settings → 打开 Secretary Mode 开关",
-  "",
-  "(新旧客户端名字不同:Secretary Mode = Business Mode,找到任意一个即可;和 Telegram Premium 无关,人人都能开。)开启立即生效,不用重发 token;开完去 设置 → Telegram Business → 自动聊天(Chatbots)重新添加即可。发 /status 可复查。",
-].join("\n");
-
 export function attachPortal(bot: Bot): void {
   bot.on("message:text", async (ctx, next) => {
     if (ctx.chat.type !== "private") return next();
     const text = ctx.message.text.trim();
     const uid = String(ctx.from.id);
     const isAdmin = config.adminUserId !== undefined && uid === config.adminUserId;
+    // 语言:已开通租户用 nativeLang;未开通用 Telegram 客户端 language_code;兜底 en
+    const lang = (await getTenant(uid))?.nativeLang || resolveUiLang(ctx.from.language_code);
 
     // ── 管理命令 ──────────────────────────────────────────────────────
     if (
@@ -99,58 +81,72 @@ export function attachPortal(bot: Bot): void {
     ) {
       const [cmd, arg, arg2] = text.split(/\s+/);
       if (cmd === "/grant") {
-        const t = await getTenant(arg!);
-        if (!t) {
-          await ctx.reply("没有这个租户 id。");
+        const tn = await getTenant(arg!);
+        if (!tn) {
+          await ctx.reply(t("portal.admin_no_tenant", lang));
           return;
         }
         const months = Number(arg2) || 12;
-        await setPlanPro(t.id, new Date(Date.now() + months * 30 * 86_400_000), "admin_grant");
-        await ctx.reply(`⭐ 已给 ${t.id} @${t.botUsername} 授予 Pro ${months} 个月。`);
+        await setPlanPro(tn.id, new Date(Date.now() + months * 30 * 86_400_000), "admin_grant");
+        await ctx.reply(t("portal.admin_grant_ok", lang, { id: tn.id, bot: tn.botUsername, months }));
         return;
       }
       if (cmd === "/revoke") {
-        const t = await getTenant(arg!);
-        if (!t) {
-          await ctx.reply("没有这个租户 id。");
+        const tn = await getTenant(arg!);
+        if (!tn) {
+          await ctx.reply(t("portal.admin_no_tenant", lang));
           return;
         }
-        await setPlanFree(t.id);
-        await ctx.reply(`已把 ${t.id} @${t.botUsername} 降为免费。`);
+        await setPlanFree(tn.id);
+        await ctx.reply(t("portal.admin_revoke_ok", lang, { id: tn.id, bot: tn.botUsername }));
         return;
       }
       if (cmd === "/tenants") {
         const list = await getAllTenants();
         if (!list.length) {
-          await ctx.reply("(还没有租户)");
+          await ctx.reply(t("portal.admin_no_tenants", lang));
           return;
         }
         const lines = await Promise.all(
-          list.map(async (t) => {
-            const u = await tenantUsage(t.id);
-            const run = isRunning(t.id) ? "🟢" : "⚪";
-            return `${run} ${t.id} @${t.botUsername} [${t.status}${t.statusNote ? `:${t.statusNote}` : ""}] 客户${u.contacts} 收${u.inMsgs}/发${u.outMsgs} 群${t.forumChatId ? "✓" : "✗"}`;
+          list.map(async (tn) => {
+            const u = await tenantUsage(tn.id);
+            const run = isRunning(tn.id) ? "🟢" : "⚪";
+            const status = `${tn.status}${tn.statusNote ? `:${tn.statusNote}` : ""}`;
+            return t("portal.admin_tenant_line", lang, {
+              run,
+              id: tn.id,
+              bot: tn.botUsername,
+              status,
+              contacts: u.contacts,
+              inMsgs: u.inMsgs,
+              outMsgs: u.outMsgs,
+              forum: tn.forumChatId ? "✓" : "✗",
+            });
           }),
         );
-        await ctx.reply(`租户 ${list.length} 个,实例在跑 ${getRunningCount()} 个:\n${lines.join("\n")}`);
+        await ctx.reply(
+          t("portal.admin_tenants_header", lang, { count: list.length, running: getRunningCount() }) +
+            "\n" +
+            lines.join("\n"),
+        );
       } else if (cmd === "/disable") {
-        const t = await getTenant(arg!);
-        if (!t) {
-          await ctx.reply("没有这个租户 id。");
+        const tn = await getTenant(arg!);
+        if (!tn) {
+          await ctx.reply(t("portal.admin_no_tenant", lang));
           return;
         }
-        await setTenantStatus(t.id, "disabled", "管理员手动停用");
-        await stopTenant(t.id);
-        await ctx.reply(`⛔ 已停用 ${t.id} @${t.botUsername}`);
+        await setTenantStatus(tn.id, "disabled", "disabled by admin");
+        await stopTenant(tn.id);
+        await ctx.reply(t("portal.admin_disable_ok", lang, { id: tn.id, bot: tn.botUsername }));
       } else {
-        const t = await getTenant(arg!);
-        if (!t) {
-          await ctx.reply("没有这个租户 id。");
+        const tn = await getTenant(arg!);
+        if (!tn) {
+          await ctx.reply(t("portal.admin_no_tenant", lang));
           return;
         }
-        await setTenantStatus(t.id, "active");
-        await startTenant({ ...t, status: "active" });
-        await ctx.reply(`▶️ 已恢复 ${t.id} @${t.botUsername}`);
+        await setTenantStatus(tn.id, "active");
+        await startTenant({ ...tn, status: "active" });
+        await ctx.reply(t("portal.admin_enable_ok", lang, { id: tn.id, bot: tn.botUsername }));
       }
       return;
     }
@@ -158,60 +154,69 @@ export function attachPortal(bot: Bot): void {
     // ── 用户命令 ──────────────────────────────────────────────────────
     // deep link:控制台超额引导过来的 https://t.me/LingoDeskbot?start=subscribe
     if (text === "/start subscribe" || text === "/subscribe") {
-      const t = await getTenant(uid);
-      if (!t) {
-        await ctx.reply("先开通再订阅 🙂 把你在 @BotFather 创建的 bot token 发给我,发 /start 看引导。");
+      const tn = await getTenant(uid);
+      if (!tn) {
+        await ctx.reply(t("portal.subscribe_not_activated", lang));
         return;
       }
-      if (t.plan === "pro") {
-        await ctx.reply("你已经是 Pro 了 ⭐ 翻译额度无限。发 /status 看续费日期,/paysupport 管理订阅。");
+      if (tn.plan === "pro") {
+        await ctx.reply(t("portal.subscribe_already_pro", lang));
         return;
       }
       try {
-        await sendProInvoice(config.botToken, ctx.chat.id);
+        await sendProInvoice(config.botToken, ctx.chat.id, lang);
       } catch (e) {
         console.error("发订阅发票失败:", e);
-        await ctx.reply("生成订阅发票失败,稍后再试或发 /paysupport 联系我们。");
+        await ctx.reply(t("portal.subscribe_invoice_fail", lang));
       }
       return;
     }
 
     if (text === "/paysupport") {
-      await ctx.reply(PAYSUPPORT_TEXT, { link_preview_options: { is_disabled: true } });
+      await ctx.reply(paySupportText(lang), { link_preview_options: { is_disabled: true } });
       return;
     }
 
     if (text === "/start" || text === "/help") {
-      await ctx.reply(WELCOME, { link_preview_options: { is_disabled: true } });
+      await ctx.reply(t("portal.welcome", lang), { link_preview_options: { is_disabled: true } });
       return;
     }
 
     if (text === "/status") {
-      const t = await getTenant(uid);
-      if (!t) {
-        await ctx.reply("你还没开通。把你在 @BotFather 拿到的 bot token 发给我即可,发 /start 看引导。");
+      const tn = await getTenant(uid);
+      if (!tn) {
+        await ctx.reply(t("portal.status_not_activated", lang));
         return;
       }
-      const u = await tenantUsage(t.id);
+      const u = await tenantUsage(tn.id);
       // 实时复查 Business Mode(用户开关 BotFather 后无事件,只能主动查)
-      const live = await validateToken(decrypt(t.botToken)).catch(() => null);
+      const live = await validateToken(decrypt(tn.botToken)).catch(() => null);
       const bizMode =
         live === null
-          ? "❓ 暂时查不到(稍后再试)"
+          ? t("portal.status_biz_unknown", lang)
           : live.canBusiness
-            ? "✅ 已开启"
-            : "❌ 未开启 → BotFather → /mybots → Bot Settings → Secretary Mode(旧称 Business Mode)→ Turn on";
+            ? t("portal.status_biz_on", lang)
+            : t("portal.status_biz_off", lang);
+      const state =
+        tn.status === "active"
+          ? isRunning(tn.id)
+            ? t("portal.status_running", lang)
+            : t("portal.status_starting", lang)
+          : t("portal.status_disabled", lang, { note: tn.statusNote ?? "" });
+      const connVal = tn.connId ? "✅" : t("portal.status_conn_off", lang);
+      const replyVal = tn.canReply ? "✅" : t("portal.status_reply_off", lang);
+      const forumVal = tn.forumChatId ? t("portal.status_forum_ok", lang) : t("portal.status_forum_off", lang);
       await ctx.reply(
         [
-          `🤖 你的 bot:@${t.botUsername}`,
-          `状态:${t.status === "active" ? (isRunning(t.id) ? "🟢 运行中" : "🟡 启动中") : `⛔ 已停用(${t.statusNote})`}`,
-          `Secretary Mode(旧称 Business Mode):${bizMode}`,
-          `Business 连接:${t.connId ? "✅" : "❌ 去 设置 → Telegram Business → 聊天自动化(Chatbots)绑定你的 bot"}`,
-          `回复权限:${t.canReply ? "✅" : "❌ 聊天自动化里选中你的 bot → 打开「回复消息」(不开则能收不能发)"}`,
-          `控制台群:${t.forumChatId ? "✅ 已绑定" : "❌ 建群拉入你的 bot,群里发 /bind"}`,
-          `母语:${t.nativeLang}(/native <码> 可改)`,
-          planLine(t),
-          `累计:客户 ${u.contacts} · 收 ${u.inMsgs} 条 · 发 ${u.outMsgs} 条`,
+          t("portal.status_bot", lang, { bot: tn.botUsername }),
+          t("portal.status_state", lang, { state }),
+          t("portal.status_secretary", lang, { mode: bizMode }),
+          t("portal.status_conn", lang, { val: connVal }),
+          t("portal.status_reply", lang, { val: replyVal }),
+          t("portal.status_forum", lang, { val: forumVal }),
+          t("portal.status_native", lang, { lang: tn.nativeLang }),
+          planLine(tn, lang),
+          t("portal.status_totals", lang, { contacts: u.contacts, inMsgs: u.inMsgs, outMsgs: u.outMsgs }),
         ]
           .filter(Boolean)
           .join("\n"),
@@ -222,43 +227,38 @@ export function attachPortal(bot: Bot): void {
     if (text.startsWith("/native")) {
       const code = (text.split(/\s+/)[1] ?? "").toLowerCase();
       if (!/^[a-z]{2,3}$/.test(code)) {
-        await ctx.reply("用法:/native <ISO639-1 语种码>,例如 /native zh(中文)、/native en(英语)。客户消息将译成这个语言。");
+        await ctx.reply(t("portal.native_usage", lang));
         return;
       }
-      const t = await getTenant(uid);
-      if (!t) {
-        await ctx.reply("你还没开通,先把 bot token 发给我。");
+      const tn = await getTenant(uid);
+      if (!tn) {
+        await ctx.reply(t("portal.not_activated_short", lang));
         return;
       }
       await setTenantNativeLang(uid, code);
-      await ctx.reply(`✅ 母语已设为 ${code},之后客户消息都译成它。`);
+      await ctx.reply(t("portal.native_set", lang, { lang: code }));
       return;
     }
 
     if (text === "/bind" || text.startsWith("/bind@")) {
-      const t = await getTenant(uid);
+      const tn = await getTenant(uid);
       await ctx.reply(
-        t
-          ? [
-              "「/bind」要发在你的控制台群里,不是发给我 🙂",
-              "",
-              `顺序:新建一个群 → 群设置开启「话题(Topics)」→ 拉入你的 bot @${t.botUsername} 并设为管理员(勾「管理话题」)→ 在那个群里发 /bind。`,
-              "发 /status 可以看你现在卡在哪一步。",
-            ].join("\n")
-          : "你还没开通 🙂 先把你在 @BotFather 创建的 bot token 发给我,发 /start 看完整引导。",
+        tn
+          ? t("portal.bind_in_group", lang, { bot: tn.botUsername })
+          : t("portal.bind_not_activated", lang),
       );
       return;
     }
 
     if (text === "/enable") {
-      const t = await getTenant(uid);
-      if (!t) {
-        await ctx.reply("你还没开通,先把 bot token 发给我。");
+      const tn = await getTenant(uid);
+      if (!tn) {
+        await ctx.reply(t("portal.not_activated_short", lang));
         return;
       }
-      await setTenantStatus(t.id, "active");
-      await startTenant({ ...t, status: "active" });
-      await ctx.reply("▶️ 已尝试恢复你的实例,发 /status 查看。");
+      await setTenantStatus(tn.id, "active");
+      await startTenant({ ...tn, status: "active" });
+      await ctx.reply(t("portal.enable_ok", lang));
       return;
     }
 
@@ -271,13 +271,13 @@ export function attachPortal(bot: Bot): void {
       const me = await validateToken(text);
       if (!me) {
         await delToken;
-        await ctx.reply("❌ 这个 token 校验失败(格式对但 Telegram 不认)。去 @BotFather → /mybots → API Token 重新复制一次。\n(原消息已删除)");
+        await ctx.reply(t("portal.token_invalid", lang));
         return;
       }
       const clash = await getTenantByBotId(me.id);
       if (clash && clash.id !== uid) {
         await delToken;
-        await ctx.reply("❌ 这个 bot 已被其他账号注册过。如果它确实是你的,先在 @BotFather 用 Revoke 重置 token 再提交新的。");
+        await ctx.reply(t("portal.token_clash", lang));
         return;
       }
       const tenant = await upsertTenant({
@@ -290,18 +290,11 @@ export function attachPortal(bot: Bot): void {
       });
       await startTenant(tenant);
       await delToken;
-      const steps = [
-        `🎉 开通成功!你的翻译中继 @${me.username} 已在云端运行。(你发的 token 消息我已删除)`,
-        "",
-        "接下来两步(手机上完成,图文版:lingodesk.org/setup/):",
-        `1️⃣ 设置 → Telegram Business → Chatbots → 绑定 @${me.username},打开「回复消息」权限`,
-        `2️⃣ 新建一个群、开启「话题(Topics)」、拉入 @${me.username} 设为管理员(勾「管理话题」),群里发 /bind`,
-        "",
-        "完成后让任何人用外语私聊你试一条,双语卡片就会弹进群里。/status 随时查进度。",
-      ];
       // 最高频卡点前置拦截:Business Mode 没开就把修复指引顶在最前面
-      if (!me.canBusiness) steps.unshift(BUSINESS_MODE_FIX, "");
-      await ctx.reply(steps.join("\n"), { link_preview_options: { is_disabled: true } });
+      const prefix = me.canBusiness ? "" : t("portal.business_mode_fix", lang) + "\n\n";
+      await ctx.reply(prefix + t("portal.activated", lang, { bot: me.username }), {
+        link_preview_options: { is_disabled: true },
+      });
       console.log(`🎫 新租户开通:${uid}(@${ctx.from.username ?? "?"})→ bot @${me.username}`);
       return;
     }
@@ -309,8 +302,8 @@ export function attachPortal(bot: Bot): void {
     // 兜底引导
     await ctx.reply(
       config.billingEnabled
-        ? "没看懂 🙂 发 /start 看开通引导;/status 查状态;/subscribe 升级 Pro。"
-        : "没看懂 🙂 发 /start 看开通引导;开通后发 /status 查看状态。",
+        ? t("portal.fallback_billing", lang)
+        : t("portal.fallback_nobilling", lang),
     );
   });
 

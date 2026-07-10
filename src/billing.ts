@@ -7,23 +7,24 @@
  */
 import type { Context } from "grammy";
 import { config } from "./config.js";
+import { t, resolveUiLang } from "./i18n.js";
 import { getTenant, setPlanPro } from "./db.js";
 
 export const PRO_PAYLOAD = "lingodesk_pro_monthly";
 const PERIOD = 2592000; // 30 天(秒),Telegram 订阅唯一允许的周期
 
 /** 给某人发 Pro 月订阅发票(Telegram Stars,自动续订) */
-export async function sendProInvoice(token: string, chatId: number): Promise<void> {
+export async function sendProInvoice(token: string, chatId: number, lang?: string | null): Promise<void> {
   const r = await fetch(`https://api.telegram.org/bot${token}/sendInvoice`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({
       chat_id: chatId,
-      title: "LingoDesk Pro",
-      description: "无限翻译额度 + 无限联系人 + 优先支持。每月自动续费,可随时取消。",
+      title: t("billing.invoice_title", lang),
+      description: t("billing.invoice_desc", lang),
       payload: PRO_PAYLOAD,
       currency: "XTR", // Telegram Stars
-      prices: [{ label: "LingoDesk Pro / 月", amount: config.priceStars }],
+      prices: [{ label: t("billing.invoice_price_label", lang), amount: config.priceStars }],
       subscription_period: PERIOD,
     }),
   });
@@ -44,29 +45,27 @@ export async function handleSuccessfulPayment(ctx: Context): Promise<void> {
   const sp = ctx.message?.successful_payment as StarPayment | undefined;
   if (!sp || sp.invoice_payload !== PRO_PAYLOAD || !ctx.from) return;
   const uid = String(ctx.from.id);
-  const t = await getTenant(uid);
+  const tenant = await getTenant(uid);
+  const lang = tenant?.nativeLang || resolveUiLang(ctx.from?.language_code);
   // 用 Telegram 给的订阅到期时间;缺则按 30 天
   const until = sp.subscription_expiration_date
     ? new Date(sp.subscription_expiration_date * 1000)
     : new Date(Date.now() + PERIOD * 1000);
   const isRenewal = sp.is_recurring === true && sp.is_first_recurring !== true;
-  if (t) {
+  if (tenant) {
     await setPlanPro(uid, until, sp.telegram_payment_charge_id);
-    console.log(`💫 ${isRenewal ? "续费" : "订阅"} Pro:${uid} @${t.botUsername} → ${until.toISOString().slice(0, 10)}`);
+    console.log(`💫 ${isRenewal ? "续费" : "订阅"} Pro:${uid} @${tenant.botUsername} → ${until.toISOString().slice(0, 10)}`);
   }
   await ctx.reply(
-    !t
-      ? "收到付款,但还没找到你的租户档案 🤔 先发 bot token 开通;如需帮助发 /paysupport。"
+    !tenant
+      ? t("billing.pay_no_tenant", lang)
       : isRenewal
-        ? "✅ LingoDesk Pro 已自动续费,谢谢支持!"
-        : "🎉 已升级 LingoDesk Pro!翻译额度解锁为无限,每月自动续费。想取消随时在 Telegram 的 设置 → 我的星星(My Stars)里操作。",
+        ? t("billing.pay_renewed", lang)
+        : t("billing.pay_upgraded", lang),
   );
 }
 
-export const PAYSUPPORT_TEXT = [
-  "💬 LingoDesk Pro · 支付支持",
-  "",
-  "· 查看 / 取消订阅:Telegram → 设置 → 我的星星(My Stars)→ 找到 LingoDesk 订阅,可随时取消(用到当前周期结束不再续费)。",
-  "· 退款、扣费异常或其它问题:邮件 hello@lingodesk.org,附上你的 @用户名,我们尽快处理。",
-  "· 发 /status 查看你当前套餐与本月用量。",
-].join("\n");
+/** 支付支持文案(给某语言的租户看) */
+export function paySupportText(lang?: string | null): string {
+  return t("billing.paysupport", lang);
+}

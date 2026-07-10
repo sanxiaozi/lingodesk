@@ -42,6 +42,7 @@ const PAGES = [
   { tmpl: "index", out: "index.html", path: "/" },
   { tmpl: "setup", out: "setup/index.html", path: "/setup/" },
   { tmpl: "about", out: "about/index.html", path: "/about/" },
+  { tmpl: "changelog", out: "changelog/index.html", path: "/changelog/" },
 ];
 
 const langBase = (code) => (code === "en" ? "" : `/${code}`);

@@ -8,7 +8,8 @@ import { Bot, GrammyError } from "grammy";
 import { config } from "./config.js";
 import { decrypt } from "./crypto.js";
 import { attachRelay, archiveTopicsFor } from "./relay.js";
-import { type Tenant, getActiveTenants, setTenantStatus, getStaleContacts } from "./db.js";
+import { t } from "./i18n.js";
+import { type Tenant, getTenant, getActiveTenants, setTenantStatus, getStaleContacts } from "./db.js";
 
 const ALLOWED_UPDATES = ["business_connection", "business_message", "message", "callback_query", "my_chat_member"] as const;
 
@@ -43,19 +44,17 @@ export async function notifyTenant(tenantId: string, text: string): Promise<void
 
 async function handleFatal(tenantId: string, e: unknown): Promise<void> {
   const em = e instanceof Error ? e.message : String(e);
+  const lang = (await getTenant(tenantId).catch(() => null))?.nativeLang;
   if (e instanceof GrammyError && e.error_code === 401) {
-    await setTenantStatus(tenantId, "disabled", "token 已失效(401)");
+    await setTenantStatus(tenantId, "disabled", "token invalid (401)");
     running.delete(tenantId);
     console.warn(`[${tenantId}] ⛔ token 失效,已停用`);
-    await notifyTenant(tenantId, "⚠️ 你的 bot token 已失效(可能在 BotFather 重置过)。服务已暂停,重新发送新 token 给我即可恢复。");
+    await notifyTenant(tenantId, t("manager.notify_token_invalid", lang));
   } else if (e instanceof GrammyError && e.error_code === 409) {
-    await setTenantStatus(tenantId, "disabled", "409:该 token 在别处也在运行");
+    await setTenantStatus(tenantId, "disabled", "409: running elsewhere");
     running.delete(tenantId);
     console.warn(`[${tenantId}] ⛔ 409 冲突,已停用`);
-    await notifyTenant(
-      tenantId,
-      "⚠️ 你的 bot 在其它地方也在运行(比如你自己部署了一份),同一 token 全球只能一个实例。已暂停云端实例;想用云端就先停掉你那份,再发 /enable 给我。",
-    );
+    await notifyTenant(tenantId, t("manager.notify_conflict", lang));
   } else {
     console.error(`[${tenantId}] 实例异常退出:`, em);
   }
