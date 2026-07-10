@@ -100,5 +100,10 @@
   "relay.tip_peer_usage": "该客户超过 24 小时没往来,Telegram 不让 bot 主动发起(防滥用硬规则)。让 TA 先发一句,或你手动回这次。草稿已保留。",
   "relay.tip_conn_invalid": "Business 连接失效,让客户发条消息刷新或去 Chatbots 重连。草稿已保留。",
   "manager.notify_token_invalid": "⚠️ 你的 bot token 已失效(可能在 BotFather 重置过)。服务已暂停,重新发送新 token 给我即可恢复。",
-  "manager.notify_conflict": "⚠️ 你的 bot 在其它地方也在运行(比如你自己部署了一份),同一 token 全球只能一个实例。已暂停云端实例;想用云端就先停掉你那份,再发 /enable 给我。"
+  "manager.notify_conflict": "⚠️ 你的 bot 在其它地方也在运行(比如你自己部署了一份),同一 token 全球只能一个实例。已暂停云端实例;想用云端就先停掉你那份,再发 /enable 给我。",
+  "cmd.start": "开通 / 查看设置引导",
+  "cmd.status": "查看开通与套餐状态",
+  "cmd.native": "设置你的母语",
+  "cmd.subscribe": "升级 Pro(不限量)",
+  "cmd.paysupport": "订阅与支付支持"
 }

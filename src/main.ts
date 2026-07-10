@@ -8,8 +8,34 @@ import { config } from "./config.js";
 import { attachPortal } from "./portal.js";
 import { startAll, archiveStaleTopics, getRunningCount, setPortalUsername } from "./manager.js";
 import { expireStalePro } from "./db.js";
+import { t, SUPPORTED } from "./i18n.js";
+import type { LanguageCode } from "@grammyjs/types";
 
 const portal = new Bot(config.botToken);
+
+/**
+ * 为门户 bot 注册 15 种界面语言的私聊命令菜单(用户在输入框打 / 时看到本地语提示)。
+ * en 作为默认菜单(不带 language_code);其余语言各设一份,缺失描述自动回退英文。
+ * 计费关闭时不展示 /subscribe /paysupport。
+ */
+async function setPortalCommands() {
+  for (const code of SUPPORTED) {
+    const cmds = [
+      { command: "start", description: t("cmd.start", code) },
+      { command: "status", description: t("cmd.status", code) },
+      { command: "native", description: t("cmd.native", code) },
+    ];
+    if (config.billingEnabled) {
+      cmds.push({ command: "subscribe", description: t("cmd.subscribe", code) });
+      cmds.push({ command: "paysupport", description: t("cmd.paysupport", code) });
+    }
+    await portal.api.setMyCommands(cmds, {
+      scope: { type: "all_private_chats" },
+      // en 写入默认菜单(language_code 省略),其它语言各写一份
+      ...(code === "en" ? {} : { language_code: code as LanguageCode }),
+    });
+  }
+}
 
 await startAll(portal);
 attachPortal(portal);
@@ -38,6 +64,8 @@ void portal.start({
   ],
   onStart: (me) => {
     setPortalUsername(me.username);
+    // 注册多语言命令菜单(失败不阻塞启动)
+    setPortalCommands().catch((e) => console.error("设置命令菜单出错:", e));
     console.log("─".repeat(60));
     console.log(`🚀 LingoDesk M1 已启动,官方门户 = @${me.username}`);
     console.log(`   · 私聊 @${me.username} 发 bot token = 自助开通(分钟级)`);

@@ -13,8 +13,9 @@ import { fileURLToPath } from "node:url";
 const DIR = join(dirname(fileURLToPath(import.meta.url)), "i18n");
 export const FALLBACK = "en";
 
-// 目前 bot 界面已本地化的语言(逐步扩充;缺失自动回退 en)
-const SUPPORTED = ["en", "zh"];
+// bot 界面已本地化的语言(缺失 key 自动回退 en)。
+// 繁体中文(zh-hant/zh-tw)由 resolveUiLang 归并到 zh;ar/ur 为 RTL。
+export const SUPPORTED = ["en", "zh", "es", "pt", "ru", "fr", "id", "vi", "th", "tr", "hi", "bn", "ar", "ur"];
 
 const DICTS: Record<string, Record<string, string>> = {};
 for (const code of SUPPORTED) {

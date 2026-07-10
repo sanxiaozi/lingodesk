@@ -100,5 +100,10 @@
   "relay.tip_peer_usage": "This customer hasn't interacted in over 24 hours, and Telegram won't let the bot initiate (an anti-abuse hard rule). Have them send a message first, or reply manually this time. Your draft has been kept.",
   "relay.tip_conn_invalid": "Business connection is invalid; have the customer send a message to refresh, or reconnect via Chatbots. Your draft has been kept.",
   "manager.notify_token_invalid": "⚠️ Your bot token is no longer valid (it may have been reset in BotFather). Service is paused — send me a new token to resume.",
-  "manager.notify_conflict": "⚠️ Your bot is running somewhere else too (e.g. a copy you self-hosted). One token can only run one instance globally. The cloud instance is paused; stop your other copy, then send /enable."
+  "manager.notify_conflict": "⚠️ Your bot is running somewhere else too (e.g. a copy you self-hosted). One token can only run one instance globally. The cloud instance is paused; stop your other copy, then send /enable.",
+  "cmd.start": "Activate / show the setup guide",
+  "cmd.status": "Check your activation & plan status",
+  "cmd.native": "Set your native language",
+  "cmd.subscribe": "Upgrade to Pro (unlimited)",
+  "cmd.paysupport": "Subscription & payment help"
 }
