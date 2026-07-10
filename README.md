@@ -13,6 +13,7 @@ Customers message your **personal Telegram account** in any language. LingoDesk 
 - **Outbound**: type in your language → translated → preview → sent from your own account on confirmation; send files directly too
 - **Robust**: Claude as the primary engine with optional OpenAI fallback; `business_connection_id` auto-refreshed and persisted; per-contact language lock; topics auto-archive after 7 idle days and revive on new messages
 - **Commands**: `/lang <code>` to correct a contact's language, `/help` for the list
+- **15 interface languages**: the website **and** the bot UI are localized into English, 简体/繁体中文, Español, Português, Русский, Français, Bahasa Indonesia, Tiếng Việt, ไทย, Türkçe, हिन्दी, বাংলা, العربية & اردو (RTL supported). The bot replies to each user in their own language (English as the fallback); translation itself works for *any* language — set yours with `/native <code>`.
 
 ## Pricing & ways to run
 
@@ -28,7 +29,7 @@ Customers message your **personal Telegram account** in any language. LingoDesk 
 
 ## Quick start (self-host)
 
-1. Create a bot with [@BotFather](https://t.me/BotFather) (`/newbot`), then in *Bot Settings* turn **Business Mode on** and **Group Privacy off**.
+1. Create a bot with [@BotFather](https://t.me/BotFather) (`/newbot`), then in *Bot Settings* turn **Secretary Mode on** (formerly *Business Mode*) and **Group Privacy off**.
 2. Phone → Settings → **Telegram Business** → **Chatbots** → link your bot with the *Reply to messages* permission.
 3. Create a group with the bot, enable **Topics**, promote the bot to admin with **Manage Topics**.
 4. Then:

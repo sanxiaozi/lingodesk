@@ -148,7 +148,23 @@ for (const lang of LANGS) {
 copyFileSync(join(WEB, "style.css"), join(OUT, "style.css"));
 copyDir(join(WEB, "assets"), OUT);
 
-console.log(`✅ 构建完成:${count} 个页面(${LANGS.length} 语言 × ${PAGES.length} 页)`);
+// sitemap.xml(每个 URL 带全语言 hreflang alternates,利于多语言 SEO)+ robots.txt
+function altLinks(page) {
+  const links = LANGS.map((l) => `    <xhtml:link rel="alternate" hreflang="${l.html}" href="${BASE_URL}${pageUrl(l.code, page)}"/>`);
+  links.push(`    <xhtml:link rel="alternate" hreflang="x-default" href="${BASE_URL}${pageUrl("en", page)}"/>`);
+  return links.join("\n");
+}
+const urlEntries = [];
+for (const lang of LANGS)
+  for (const page of PAGES) {
+    if (!templates[page.tmpl]) continue;
+    urlEntries.push(`  <url>\n    <loc>${BASE_URL}${pageUrl(lang.code, page)}</loc>\n${altLinks(page)}\n  </url>`);
+  }
+const sitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n${urlEntries.join("\n")}\n</urlset>\n`;
+writeFileSync(join(OUT, "sitemap.xml"), sitemap);
+writeFileSync(join(OUT, "robots.txt"), `User-agent: *\nAllow: /\nSitemap: ${BASE_URL}/sitemap.xml\n`);
+
+console.log(`✅ 构建完成:${count} 个页面(${LANGS.length} 语言 × ${PAGES.length} 页)+ sitemap.xml(${urlEntries.length} URL)+ robots.txt`);
 if (missing.size) {
   console.warn(`⚠️ 缺失文案 ${missing.size} 条(已回退英文/占位):`);
   console.warn([...missing].slice(0, 40).join("\n"));

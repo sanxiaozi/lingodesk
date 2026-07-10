@@ -12,6 +12,7 @@
 - **出站**:你在 Topic 里打中文 → 译成客户语 → 预览确认 → 以你名义发出;也可直接发文件给客户
 - **稳健**:Claude 主引擎 + OpenAI 可选兜底;`business_connection_id` 实时刷新并持久化;每客户语种锁定;7 天无往来自动归档、来新消息自动复活
 - **命令**:`/lang <码>` 手动纠正客户语种,`/help` 帮助
+- **15 种界面语言**:官网**和** bot 界面均已本地化为 English、简体/繁体中文、Español、Português、Русский、Français、Bahasa Indonesia、Tiếng Việt、ไทย、Türkçe、हिन्दी、বাংলা、العربية、اردو(支持 RTL)。bot 按每个用户自己的语言回复(英语兜底);翻译本身支持*任意*语言 —— 用 `/native <码>` 设置你的母语。
 
 ## 定价与用法
 
@@ -27,7 +28,7 @@
 
 ## 快速开始(自托管)
 
-1. 用 [@BotFather](https://t.me/BotFather) 建 bot(`/newbot`),然后在 *Bot Settings* 里 **开启 Business Mode**、**关闭 Group Privacy**(两个都必做)。
+1. 用 [@BotFather](https://t.me/BotFather) 建 bot(`/newbot`),然后在 *Bot Settings* 里 **开启 Secretary Mode**(旧称 *Business Mode*)、**关闭 Group Privacy**(两个都必做)。
 2. 手机 → 设置 → **Telegram Business** → **Chatbots** → 绑定你的 bot,勾选「回复消息」权限。
 3. 建一个群拉入 bot,开启 **话题(Topics)**,把 bot 设为管理员并勾选 **管理话题**。
 4. 然后:
