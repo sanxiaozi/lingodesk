@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="{{htmlLang}}" dir="{{dir}}" data-lang="{{lang}}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{about.title}}</title>
+<meta name="description" content="{{about.desc}}">
+<meta name="theme-color" content="#05060c">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌐</text></svg>">
+{{hreflang}}
+{{autoRedirect}}
+<link rel="stylesheet" href="/style.css">
+<style>
+  .wrap { max-width: 760px; margin: 0 auto; padding: 0 24px; }
+  .hero { padding: 64px 0 8px; text-align: center; }
+  .hero h1 { font-size: clamp(30px, 4.5vw, 46px); letter-spacing: -0.02em; font-weight: 760; }
+  .hero .tag { color: var(--muted); font-size: 17px; margin-top: 12px; }
+  section { padding: 40px 0 0; }
+  h2 { font-size: 22px; font-weight: 720; letter-spacing: -0.01em; margin-bottom: 12px; }
+  p { color: #c6ccd4; font-size: 15.5px; margin-bottom: 14px; }
+  .princ { list-style: none; margin: 8px 0 0; }
+  .princ li { position: relative; padding: 6px 0 6px 28px; color: #c6ccd4; font-size: 15px; }
+  .princ li::before { content: "✦"; position: absolute; left: 2px; color: var(--accent-2); }
+  .contact { margin: 44px 0 8px; padding: 40px 32px; text-align: center; position: relative; overflow: hidden; }
+  .contact::before { content: ""; position: absolute; inset: -40%; background: radial-gradient(50% 50% at 50% 40%, rgba(79, 140, 255, 0.16), transparent 70%); }
+  .contact > * { position: relative; }
+  .contact .k { font-size: 13px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); font-weight: 700; }
+  .mail {
+    display: inline-block; margin: 16px 0 6px; font-size: clamp(22px, 4vw, 32px); font-weight: 720;
+    letter-spacing: -0.01em; text-decoration: none; direction: ltr;
+    background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .contact .note { color: var(--muted); font-size: 13.5px; margin-bottom: 22px; }
+  .links { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .links a {
+    display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border-radius: 999px;
+    border: 1px solid var(--border); background: var(--panel); color: var(--text); text-decoration: none; font-size: 14px;
+  }
+  .links a:hover { border-color: rgba(255, 255, 255, 0.22); background: var(--panel-2); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a class="logo" href="{{base}}/">🌐 Lingo<span>Desk</span></a>
+    <nav>
+      <a href="{{base}}/">{{nav.home}}</a>
+      <a href="{{base}}/setup/">{{nav.get_started}}</a>
+      <a href="{{base}}/about/" class="active">{{nav.about}}</a>
+      {{langSwitcher}}
+    </nav>
+  </header>
+
+  <section class="hero">
+    <h1>{{about.hero_h1}}</h1>
+    <p class="tag">{{about.hero_tag}}</p>
+  </section>
+
+  <section>
+    <h2>{{about.build_h}}</h2>
+    <p>{{about.build_p1}}</p>
+    <p>{{about.build_p2}}</p>
+  </section>
+
+  <section>
+    <h2>{{about.diff_h}}</h2>
+    <ul class="princ">
+      <li>{{about.diff_1}}</li>
+      <li>{{about.diff_2}}</li>
+      <li>{{about.diff_3}}</li>
+    </ul>
+  </section>
+
+  <section class="contact glass">
+    <div class="k">{{about.contact_k}}</div>
+    <a class="mail" href="mailto:hello@lingodesk.org">hello@lingodesk.org</a>
+    <div class="note">{{about.contact_note}}</div>
+    <div class="links">
+      <a href="https://t.me/LingoDeskbot">💬 @LingoDeskbot</a>
+      <a href="https://github.com/sanxiaozi/lingodesk">💻 GitHub</a>
+      <a href="{{base}}/setup/">{{about.link_started}}</a>
+    </div>
+  </section>
+
+  <footer>
+    <a href="{{base}}/">{{nav.home}}</a> · <a href="{{base}}/setup/">{{common.footer_setup}}</a> · <a href="https://github.com/sanxiaozi/lingodesk">GitHub</a> · © 2026 LingoDesk
+  </footer>
+</div>
+</body>
+</html>

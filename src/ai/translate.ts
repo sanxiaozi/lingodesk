@@ -20,6 +20,9 @@ const LANG_NAMES: Record<string, string> = {
   vi: "Vietnamese",
   th: "Thai",
   tr: "Turkish",
+  hi: "Hindi",
+  bn: "Bengali",
+  ur: "Urdu",
 };
 
 const langName = (code: string): string => LANG_NAMES[code] ?? `the language with ISO 639-1 code "${code}"`;
