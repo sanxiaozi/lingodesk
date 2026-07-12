@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "ids": "tsx scripts/ids.ts",
     "db:push": "prisma db push",
-    "build:site": "node scripts/build-site.mjs"
+    "build:site": "node scripts/build-site.mjs",
+    "report:daily": "tsx scripts/daily-report.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.105.0",
