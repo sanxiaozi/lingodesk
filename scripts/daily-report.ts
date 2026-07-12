@@ -41,16 +41,18 @@ async function msgStats(gte: Date, lt: Date) {
 async function main() {
   if (!config.adminUserId) throw new Error("未配置 ADMIN_USER_ID,无推送目标");
 
-  const [tenants, yesterday, dayBefore, newContacts] = await Promise.all([
+  const [tenants, yesterday, dayBefore, newContacts, events] = await Promise.all([
     prisma.tenant.findMany({
       select: {
         id: true, botUsername: true, name: true, username: true, status: true, statusNote: true,
         plan: true, proUntil: true, usageMonth: true, usageCount: true, createdAt: true,
+        connId: true, canReply: true, forumChatId: true,
       },
     }),
     msgStats(d1, todayCn0),
     msgStats(d2, d1),
     prisma.contact.count({ where: { createdAt: { gte: d1, lt: todayCn0 } } }),
+    prisma.opsEvent.findMany({ where: { createdAt: { gte: d1, lt: todayCn0 } }, orderBy: { createdAt: "asc" } }),
   ]);
 
   const active = tenants.filter((t) => t.status === "active");
@@ -94,6 +96,47 @@ async function main() {
     for (const r of ranking) lines.push(`   ${tname(r.t!)} — 收 ${r.in} / 发 ${r.out}`);
   }
 
+  // ── 昨日用户问题(OpsEvent 埋点:含没开通成功、根本不在租户表里的人) ──
+  const EVENT_LABEL: Record<string, string> = {
+    token_invalid: "提交的 bot token 无效",
+    token_clash: "token 已被他人注册",
+    secretary_mode_off: "Secretary Mode 未开启",
+    reply_perm_missing: "未开「回复消息」权限",
+    translate_fail: "翻译失败",
+    send_fail: "发送给客户失败",
+  };
+  // 同一人同一问题合并计次,保留最后一次 detail
+  const probMap = new Map<string, { who: string; label: string; detail: string; n: number }>();
+  for (const ev of events) {
+    const who = ev.username ? `@${ev.username}` : ev.userId;
+    const key = `${ev.userId}|${ev.type}`;
+    const cur = probMap.get(key);
+    if (cur) { cur.n++; cur.detail = ev.detail || cur.detail; }
+    else probMap.set(key, { who, label: EVENT_LABEL[ev.type] ?? ev.type, detail: ev.detail, n: 1 });
+  }
+  const problems = [...probMap.values()];
+  if (problems.length) {
+    lines.push(``, `🚨 <b>昨日用户问题</b>(${events.length} 次):`);
+    for (const p of problems)
+      lines.push(`   ${p.who} — ${p.label}${p.detail ? `(${p.detail})` : ""}${p.n > 1 ? ` ×${p.n}` : ""}`);
+  }
+
+  // ── 新租户开通漏斗:近 7 天开通但没走完设置的,点出卡在哪一步 ──
+  const stuck = tenants
+    .filter((t) => t.status === "active" && Date.now() - t.createdAt.getTime() < 7 * 86400_000)
+    .map((t) => {
+      const stage = !t.connId
+        ? "已开通,还没绑定 Telegram Business(Chatbots)"
+        : !t.canReply
+          ? "已绑定,但没开「回复消息」权限(能收不能发)"
+          : !t.forumChatId
+            ? "还没绑定控制台群(建群 + /bind)"
+            : null;
+      return stage ? `   ${tname(t)}(@${t.botUsername})— ${stage}` : null;
+    })
+    .filter(Boolean) as string[];
+  if (stuck.length) lines.push(``, `🧭 <b>新租户卡在设置中</b>:`, ...stuck);
+
   // ── AI 点评(失败降级为纯指标,不阻塞推送) ──
   try {
     const stats = {
@@ -104,6 +147,8 @@ async function main() {
       额度预警: quotaWarn.map((t) => ({ 租户: tname(t), 用量: `${t.usageCount}/${config.freeQuota}` })),
       Pro即将到期: proExpiring.map(tname),
       停用: disabled.map((t) => ({ bot: t.botUsername, 原因: t.statusNote })),
+      昨日用户问题: problems.map((p) => `${p.who}:${p.label}${p.detail ? `(${p.detail})` : ""}${p.n > 1 ? ` ×${p.n}` : ""}`),
+      新租户卡在设置中: stuck.map((s) => s.trim()),
     };
     const comment = await complete(
       "你是 LingoDesk(Telegram 翻译中继 SaaS)的运营分析师。基于日报数据,用简体中文给创始人 2-3 句最值得注意的观察和行动建议。直接说重点,不要客套、不要重复罗列数据本身。",

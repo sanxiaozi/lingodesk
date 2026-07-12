@@ -33,6 +33,7 @@ import {
   setArchived,
   isOverQuota,
   bumpOutbound,
+  logEvent,
 } from "./db.js";
 import { getPortalUsername } from "./manager.js";
 
@@ -133,6 +134,7 @@ export function attachRelay(bot: Bot, tenantId: string, notify?: (text: string) 
     // 绑定了但没给「回复消息」权限 = 能收不能发,主动提醒(等到发送失败就晚了)
     if (bc.is_enabled && !canReply && notify) {
       const tn = await getTenant(tenantId);
+      logEvent(tenantId, "reply_perm_missing", "", tn?.username || tn?.name || "");
       await notify(tr("relay.reply_perm_warn", tn?.nativeLang));
     }
   });
@@ -324,6 +326,7 @@ export function attachRelay(bot: Bot, tenantId: string, notify?: (text: string) 
         }
       } catch (e) {
         console.error(`[${tenantId}] 翻译失败,原文落档:`, e);
+        logEvent(tenantId, "translate_fail", (e instanceof Error ? e.message : String(e)).slice(0, 120), t.username || t.name);
         await ctx.api.sendMessage(forum, tr("relay.translate_fail", t.nativeLang, { text: m.text }), {
           message_thread_id: contact.threadId,
         });
@@ -535,13 +538,18 @@ export function attachRelay(bot: Bot, tenantId: string, notify?: (text: string) 
       }
       console.error(`[${tenantId}] 发送失败:`, e);
       let tip = tr("relay.tip_generic", lang);
+      let failKind = "unknown";
       if (em.includes("BUSINESS_PEER_INVALID")) {
         tip = tr("relay.tip_peer_invalid", lang);
+        failKind = "BUSINESS_PEER_INVALID(多半是回复权限没开)";
       } else if (em.includes("BUSINESS_PEER_USAGE_MISSING") || em.includes("BUSINESS_CHAT_INACTIVE") || em.includes("PEER_ID_INVALID")) {
         tip = tr("relay.tip_peer_usage", lang);
+        failKind = "对方超 24h 未互动,bot 不能主动发起";
       } else if (em.includes("business connection not found") || em.includes("BUSINESS_CONNECTION_INVALID")) {
         tip = tr("relay.tip_conn_invalid", lang);
+        failKind = "Business 连接失效";
       }
+      logEvent(tenantId, "send_fail", failKind === "unknown" ? em.slice(0, 120) : failKind, t?.username || t?.name || "");
       await ctx.answerCallbackQuery(tip);
     }
   });

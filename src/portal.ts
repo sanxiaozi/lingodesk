@@ -20,6 +20,7 @@ import {
   currentUsage,
   setPlanPro,
   setPlanFree,
+  logEvent,
 } from "./db.js";
 import { startTenant, stopTenant, isRunning, getRunningCount } from "./manager.js";
 import { sendProInvoice, handleSuccessfulPayment, paySupportText } from "./billing.js";
@@ -271,12 +272,14 @@ export function attachPortal(bot: Bot): void {
       const me = await validateToken(text);
       if (!me) {
         await delToken;
+        logEvent(uid, "token_invalid", "", ctx.from.username ?? ctx.from.first_name ?? "");
         await ctx.reply(t("portal.token_invalid", lang));
         return;
       }
       const clash = await getTenantByBotId(me.id);
       if (clash && clash.id !== uid) {
         await delToken;
+        logEvent(uid, "token_clash", `@${me.username} 已被 ${clash.id} 注册`, ctx.from.username ?? ctx.from.first_name ?? "");
         await ctx.reply(t("portal.token_clash", lang));
         return;
       }
@@ -291,6 +294,7 @@ export function attachPortal(bot: Bot): void {
       await startTenant(tenant);
       await delToken;
       // 最高频卡点前置拦截:Business Mode 没开就把修复指引顶在最前面
+      if (!me.canBusiness) logEvent(uid, "secretary_mode_off", `@${me.username}`, ctx.from.username ?? ctx.from.first_name ?? "");
       const prefix = me.canBusiness ? "" : t("portal.business_mode_fix", lang) + "\n\n";
       await ctx.reply(prefix + t("portal.activated", lang, { bot: me.username }), {
         link_preview_options: { is_disabled: true },

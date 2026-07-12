@@ -92,3 +92,14 @@ model AppState {
   key   String @id
   value String
 }
+
+// 运营事件:用户遇到的问题埋点(开通失败/权限缺失/发送失败等),日报汇总用。
+// 未开通成功的人不会有 Tenant 行,这张表是看见他们的唯一途径。
+model OpsEvent {
+  id        Int      @id @default(autoincrement())
+  userId    String // 遇到问题的 Telegram user.id(可能不是租户)
+  username  String   @default("") // @username / 展示名(便于日报直接点名)
+  type      String // token_invalid / token_clash / secretary_mode_off / reply_perm_missing / translate_fail / send_fail
+  detail    String   @default("") // 具体上下文(bot 名、错误码等)
+  createdAt DateTime @default(now())
+}

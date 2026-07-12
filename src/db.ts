@@ -96,6 +96,11 @@ export function currentUsage(t: Tenant): number {
   return t.usageMonth === monthKey() ? t.usageCount : 0;
 }
 
+/** 运营事件埋点(用户遇到的问题;fire-and-forget,失败静默,绝不影响主流程) */
+export function logEvent(userId: string, type: string, detail = "", username = ""): void {
+  prisma.opsEvent.create({ data: { userId, type, detail, username } }).catch(() => {});
+}
+
 /** 是否已超免费额度(计费开启 + free + 本月用量达标才 true) */
 export function isOverQuota(t: Tenant): boolean {
   if (!config.billingEnabled || t.plan === "pro") return false;
