@@ -11,7 +11,7 @@ import { attachRelay, archiveTopicsFor } from "./relay.js";
 import { t } from "./i18n.js";
 import { type Tenant, getTenant, getActiveTenants, setTenantStatus, getStaleContacts } from "./db.js";
 
-const ALLOWED_UPDATES = ["business_connection", "business_message", "message", "callback_query", "my_chat_member"] as const;
+const ALLOWED_UPDATES = ["business_connection", "business_message", "message", "channel_post", "callback_query", "my_chat_member"] as const;
 
 const running = new Map<string, Bot>(); // tenantId -> 实例(含共享门户实例)
 let portalBot: Bot | undefined;

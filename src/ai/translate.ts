@@ -25,7 +25,7 @@ const LANG_NAMES: Record<string, string> = {
   ur: "Urdu",
 };
 
-const langName = (code: string): string => LANG_NAMES[code] ?? `the language with ISO 639-1 code "${code}"`;
+export const langName = (code: string): string => LANG_NAMES[code] ?? `the language with ISO 639-1 code "${code}"`;
 
 /** 入站:翻译成租户母语 + 识别原文语种 */
 export async function translateInbound(text: string, nativeLang: string): Promise<{ lang: string; native: string }> {

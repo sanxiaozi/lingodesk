@@ -15,7 +15,8 @@
 import type { Bot } from "grammy";
 import { config } from "./config.js";
 import { t as tr } from "./i18n.js";
-import { translateInbound, translateOutbound } from "./ai/translate.js";
+import { translateInbound, translateOutbound, langName } from "./ai/translate.js";
+import { complete } from "./ai/_client.js";
 import { downloadTgFile } from "./storage.js";
 import {
   type Tenant,
@@ -34,6 +35,13 @@ import {
   isOverQuota,
   bumpOutbound,
   logEvent,
+  getTemplates,
+  getTemplate,
+  upsertTemplate,
+  delTemplate,
+  getGroupChat,
+  upsertGroupChat,
+  recentMessages,
 } from "./db.js";
 import { getPortalUsername } from "./manager.js";
 
@@ -68,6 +76,56 @@ export function attachRelay(bot: Bot, tenantId: string, notify?: (text: string) 
   // 出站待确认译文(预览 → 确认后才发客户),内存存储,重启失效
   const pendingOut = new Map<number, PendingOut>();
   let pendingSeq = 0;
+
+  /** 统一出站预览:母语文本 → 译客户语 → Topic 里弹预览卡(确认才发)。打字/模板/AI 拟稿共用 */
+  async function startPreview(t: Tenant, contact: { id: number; chatId: string; connId: string | null; lang: string }, threadId: number, text: string): Promise<void> {
+    const targetLang = resolveLang(contact.lang);
+    const translated = await translateOutbound(text, targetLang);
+    const token = ++pendingSeq;
+    pendingOut.set(token, { contactId: contact.id, chatId: contact.chatId, connId: contact.connId ?? undefined, lang: targetLang, translated, original: text });
+    await bot.api.sendMessage(
+      Number(t.forumChatId),
+      tr("relay.preview", t.nativeLang, { lang: targetLang, translated, original: text }),
+      {
+        message_thread_id: threadId,
+        reply_markup: {
+          inline_keyboard: [
+            [
+              { text: tr("relay.btn_send", t.nativeLang), callback_data: `send:${token}` },
+              { text: tr("relay.btn_cancel", t.nativeLang), callback_data: `cancel:${token}` },
+            ],
+          ],
+        },
+      },
+    );
+  }
+
+  // 群翻译超额提醒限频(每群最多 6 小时提示一次,防刷屏)
+  const groupQuotaNoticeAt = new Map<string, number>();
+
+  /** 群/频道消息翻译:非目标语 → 以回复形式贴译文;占免费额度(Pro 不限),超额静默+限频提醒 */
+  async function groupTranslate(chatId: number, messageId: number, text: string, t: Tenant, g: { targetLang: string }): Promise<void> {
+    if (isOverQuota(t)) {
+      const key = String(chatId);
+      if (Date.now() - (groupQuotaNoticeAt.get(key) ?? 0) > 6 * 3600_000) {
+        groupQuotaNoticeAt.set(key, Date.now());
+        const url = `https://t.me/${getPortalUsername()}?start=subscribe`;
+        await bot.api
+          .sendMessage(chatId, tr("relay.group_quota", t.nativeLang, { quota: config.freeQuota, url }))
+          .catch(() => {});
+      }
+      return;
+    }
+    try {
+      const r = await translateInbound(text, g.targetLang);
+      // 原文已是目标语 / 译文与原文相同 → 不贴,避免噪音(AI 调用已发生,但不计额度)
+      if (!r.native || r.lang === g.targetLang || r.native.trim() === text.trim()) return;
+      await bot.api.sendMessage(chatId, `🌐 ${r.native}`, { reply_parameters: { message_id: messageId } });
+      await bumpOutbound(t.id);
+    } catch (e) {
+      console.error(`[${tenantId}] 群翻译失败:`, e);
+    }
+  }
   // 同一客户的入站消息串行处理(防并发建重复 Topic / 唯一键冲突丢消息)
   const inboundLocks = new Map<string, Promise<unknown>>();
   function withLock<T>(key: string, fn: () => Promise<T>): Promise<T> {
@@ -144,17 +202,34 @@ export function attachRelay(bot: Bot, tenantId: string, notify?: (text: string) 
     const mc = ctx.myChatMember;
     const status = mc.new_chat_member.status;
     const chat = mc.chat;
-    if (chat.type !== "supergroup" || !chat.is_forum) return next();
     if (status !== "member" && status !== "administrator") return next();
     const t = await getTenant(tenantId);
-    if (!t || t.forumChatId) return next(); // 已有控制台,换绑用 /bind
-    await setTenantForum(tenantId, String(chat.id));
-    console.log(`[${tenantId}] 📌 已自动绑定控制台群:${chat.id}`);
-    try {
-      await ctx.api.sendMessage(chat.id, tr("relay.bind_ok", t?.nativeLang));
-    } catch {
-      /* 无发言权限等,静默 */
+    if (!t) return next();
+    // 话题超级群且尚无控制台 → 自动绑定为控制台(换绑用 /bind)
+    if (chat.type === "supergroup" && chat.is_forum && !t.forumChatId) {
+      await setTenantForum(tenantId, String(chat.id));
+      console.log(`[${tenantId}] 📌 已自动绑定控制台群:${chat.id}`);
+      try {
+        await ctx.api.sendMessage(chat.id, tr("relay.bind_ok", t.nativeLang));
+      } catch {
+        /* 无发言权限等,静默 */
+      }
+      return;
     }
+    // 其它群/频道(或控制台已有)→ 首次进入时给跨语言模式指引
+    if (chat.type === "group" || chat.type === "supergroup" || chat.type === "channel") {
+      if (t.forumChatId && String(chat.id) === t.forumChatId) return next();
+      const g = await getGroupChat(tenantId, String(chat.id));
+      if (!g) {
+        try {
+          await ctx.api.sendMessage(chat.id, tr("relay.group_hint", t.nativeLang));
+        } catch {
+          /* 频道无发帖权限等,静默 */
+        }
+      }
+      return;
+    }
+    return next();
   });
 
   // ── 入站 ────────────────────────────────────────────────────────────
@@ -367,6 +442,38 @@ export function attachRelay(bot: Bot, tenantId: string, notify?: (text: string) 
     }
 
     const t = await getTenant(tenantId);
+
+    // ── 跨语言群组:注册过的普通群(非控制台)自动把非目标语消息翻成目标语回帖 ──
+    if ((ctx.chat.type === "group" || ctx.chat.type === "supergroup") && !(t?.forumChatId && ctx.chat.id === Number(t.forumChatId))) {
+      // /glang <码>|off:开关本群跨语言模式(仅租户本人)
+      if (rawText === "/glang" || rawText?.startsWith("/glang ") || rawText?.startsWith("/glang@")) {
+        if (!t) return next();
+        if (String(ctx.from?.id) !== (t.ownerUserId || t.id)) {
+          await ctx.reply(tr("relay.glang_owner_only", t.nativeLang));
+          return;
+        }
+        const garg = rawText.replace(/^\/glang(@\S+)?\s*/, "").trim().toLowerCase();
+        if (garg === "off") {
+          await upsertGroupChat(tenantId, String(ctx.chat.id), { enabled: false });
+          await ctx.reply(tr("relay.glang_off", t.nativeLang));
+        } else if (/^[a-z]{2,3}$/.test(garg)) {
+          await upsertGroupChat(tenantId, String(ctx.chat.id), { title: "title" in ctx.chat ? (ctx.chat.title ?? "") : "", kind: "group", targetLang: garg, enabled: true });
+          await ctx.reply(tr("relay.glang_set", t.nativeLang, { lang: garg }));
+        } else {
+          await ctx.reply(tr("relay.glang_usage", t.nativeLang));
+        }
+        return;
+      }
+      const g = await getGroupChat(tenantId, String(ctx.chat.id));
+      if (g?.enabled && t) {
+        const gtext = ctx.message.text ?? ctx.message.caption;
+        if (gtext && !gtext.startsWith("/") && gtext.length >= 2 && !ctx.from?.is_bot)
+          await groupTranslate(ctx.chat.id, ctx.message.message_id, gtext, t, g);
+        return;
+      }
+      return next();
+    }
+
     if (!t?.forumChatId || ctx.chat.id !== Number(t.forumChatId)) return next();
     const threadId = ctx.message.message_thread_id;
     if (threadId === undefined) return;
@@ -436,6 +543,51 @@ export function attachRelay(bot: Bot, tenantId: string, notify?: (text: string) 
         }
         await setLang(contact.id, code);
         await ctx.reply(tr("relay.lang_set", t.nativeLang, { name: contact.name, code }), { message_thread_id: threadId });
+      } else if (cmd === "/t") {
+        // 模板列表 → inline 按钮,点按走翻译预览
+        const list = await getTemplates(tenantId);
+        if (!list.length) {
+          await ctx.reply(tr("relay.tpl_empty", t.nativeLang), { message_thread_id: threadId });
+          return;
+        }
+        const rows: { text: string; callback_data: string }[][] = [];
+        for (let i = 0; i < list.length; i += 2)
+          rows.push(list.slice(i, i + 2).map((tp) => ({ text: tp.label, callback_data: `tpl:${tp.id}` })));
+        await ctx.reply(tr("relay.tpl_pick", t.nativeLang), { message_thread_id: threadId, reply_markup: { inline_keyboard: rows } });
+      } else if (cmd === "/t_add") {
+        const m2 = text.match(/^\/t_add\s+(\S+)\s+([\s\S]+)/);
+        if (!m2) {
+          await ctx.reply(tr("relay.tpl_usage", t.nativeLang), { message_thread_id: threadId });
+          return;
+        }
+        await upsertTemplate(tenantId, m2[1]!.slice(0, 32), m2[2]!.trim());
+        await ctx.reply(tr("relay.tpl_added", t.nativeLang, { label: m2[1]!.slice(0, 32) }), { message_thread_id: threadId });
+      } else if (cmd === "/t_del") {
+        if (!arg) {
+          await ctx.reply(tr("relay.tpl_usage", t.nativeLang), { message_thread_id: threadId });
+          return;
+        }
+        const ok = await delTemplate(tenantId, arg);
+        await ctx.reply(tr(ok ? "relay.tpl_deleted" : "relay.tpl_missing", t.nativeLang, { label: arg }), { message_thread_id: threadId });
+      } else if (cmd === "/draft") {
+        // AI 拟稿:客户最近对话 + 可选要点 → 母语草稿 → 直接进翻译预览
+        const brief = text.replace(/^\/draft\s*/, "").trim();
+        try {
+          const history = await recentMessages(contact.id, 10);
+          const dialog = history
+            .map((m2) => `${m2.direction === "in" ? `客户(${contact.name})` : "我"}:${m2.nativeText || m2.originalText}`)
+            .join("\n");
+          const draft = await complete(
+            `你是用户的商务沟通助理。根据与客户的最近对话${brief ? "和用户给出的要点" : ""},用${langName(t.nativeLang)}以用户第一人称口吻拟一条自然、得体、简洁的回复。只输出回复正文,不要任何解释或前后缀。`,
+            `最近对话:\n${dialog || "(暂无历史)"}\n${brief ? `\n用户要点:${brief}` : "\n(无要点,请根据对话上下文拟最合适的回复)"}`,
+            500,
+          );
+          if (!draft) throw new Error("empty draft");
+          await startPreview(t, contact, threadId, draft);
+        } catch (e) {
+          console.error(`[${tenantId}] 拟稿失败:`, e);
+          await ctx.reply(tr("relay.draft_fail", t.nativeLang), { message_thread_id: threadId });
+        }
       } else if (cmd === "/help") {
         await ctx.reply(tr("relay.help", t.nativeLang), { message_thread_id: threadId });
       } else {
@@ -455,30 +607,56 @@ export function attachRelay(bot: Bot, tenantId: string, notify?: (text: string) 
     cancelGreeting(contact.tgId);
 
     // 翻译后先在 Topic 预览,确认才发客户(杜绝误发)
-    const targetLang = resolveLang(contact.lang);
-    const translated = await translateOutbound(text, targetLang);
-    const token = ++pendingSeq;
-    pendingOut.set(token, { contactId: contact.id, chatId: contact.chatId, connId: contact.connId ?? undefined, lang: targetLang, translated, original: text });
-    await ctx.api.sendMessage(
-      Number(t.forumChatId),
-      tr("relay.preview", t.nativeLang, { lang: targetLang, translated, original: text }),
-      {
-        message_thread_id: threadId,
-        reply_markup: {
-          inline_keyboard: [
-            [
-              { text: tr("relay.btn_send", t.nativeLang), callback_data: `send:${token}` },
-              { text: tr("relay.btn_cancel", t.nativeLang), callback_data: `cancel:${token}` },
-            ],
-          ],
-        },
-      },
-    );
+    await startPreview(t, contact, threadId, text);
   });
 
-  // ── 按钮回调:出站确认 ───────────────────────────────────────────────
+  // ── 跨语言频道:发帖后自动跟发译文;频道内发 /glang 配置(能发帖即视为管理员) ──
+  bot.on("channel_post", async (ctx) => {
+    const post = ctx.channelPost;
+    const text = post.text ?? post.caption;
+    if (!text) return;
+    const t = await getTenant(tenantId);
+    if (!t) return;
+    const chatId = String(ctx.chat.id);
+    if (text.startsWith("/glang")) {
+      const garg = text.replace(/^\/glang(@\S+)?\s*/, "").trim().toLowerCase();
+      if (garg === "off") {
+        await upsertGroupChat(tenantId, chatId, { enabled: false });
+        await ctx.reply(tr("relay.glang_off", t.nativeLang)).catch(() => {});
+      } else if (/^[a-z]{2,3}$/.test(garg)) {
+        await upsertGroupChat(tenantId, chatId, { title: ctx.chat.title ?? "", kind: "channel", targetLang: garg, enabled: true });
+        await ctx.reply(tr("relay.glang_set", t.nativeLang, { lang: garg })).catch(() => {});
+      } else {
+        await ctx.reply(tr("relay.glang_usage", t.nativeLang)).catch(() => {});
+      }
+      return;
+    }
+    const g = await getGroupChat(tenantId, chatId);
+    if (!g?.enabled || text.length < 2) return;
+    await groupTranslate(ctx.chat.id, post.message_id, text, t, g);
+  });
+
+  // ── 按钮回调:出站确认 / 模板选发 ────────────────────────────────────
   bot.on("callback_query:data", async (ctx, next) => {
     const [action, arg] = ctx.callbackQuery.data.split(":");
+
+    // 模板按钮:模板文案 → 常规翻译预览流程(与打字完全一致,确认才发)
+    if (action === "tpl") {
+      const t = await getTenant(tenantId);
+      const threadId = ctx.callbackQuery.message?.message_thread_id;
+      if (!t?.forumChatId || threadId === undefined) return void (await ctx.answerCallbackQuery());
+      const tp = await getTemplate(Number(arg));
+      if (!tp || tp.tenantId !== tenantId) {
+        await ctx.answerCallbackQuery(tr("relay.tpl_gone", t.nativeLang));
+        return;
+      }
+      const contact = await getContactByThread(tenantId, threadId);
+      if (!contact) return void (await ctx.answerCallbackQuery());
+      await ctx.answerCallbackQuery();
+      await startPreview(t, contact, threadId, tp.text);
+      return;
+    }
+
     if (action !== "send" && action !== "cancel") return next();
     const token = Number(arg);
     const p = pendingOut.get(token);

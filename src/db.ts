@@ -107,7 +107,7 @@ export function isOverQuota(t: Tenant): boolean {
   return currentUsage(t) >= config.freeQuota;
 }
 
-/** 出站发送成功后计一条(跨月自动重置为 1) */
+/** 出站发送成功后计一条(跨月自动重置为 1);同时累计 MonthlyUsage 月度流水(看板/对账) */
 export async function bumpOutbound(tenantId: string): Promise<void> {
   const t = await prisma.tenant.findUnique({ where: { id: tenantId } });
   if (!t) return;
@@ -116,6 +116,71 @@ export async function bumpOutbound(tenantId: string): Promise<void> {
     where: { id: tenantId },
     data: t.usageMonth === mk ? { usageCount: { increment: 1 } } : { usageMonth: mk, usageCount: 1 },
   });
+  await prisma.monthlyUsage
+    .upsert({
+      where: { tenantId_month: { tenantId, month: mk } },
+      create: { tenantId, month: mk, outCount: 1 },
+      update: { outCount: { increment: 1 } },
+    })
+    .catch(() => {}); // 流水失败不影响计量主链路
+}
+
+// ── 常用回复模板 ──────────────────────────────────────────────────────
+export function getTemplates(tenantId: string) {
+  return prisma.template.findMany({ where: { tenantId }, orderBy: { label: "asc" } });
+}
+
+export function getTemplate(id: number) {
+  return prisma.template.findUnique({ where: { id } });
+}
+
+export function upsertTemplate(tenantId: string, label: string, text: string) {
+  return prisma.template.upsert({
+    where: { tenantId_label: { tenantId, label } },
+    create: { tenantId, label, text },
+    update: { text },
+  });
+}
+
+export async function delTemplate(tenantId: string, label: string): Promise<boolean> {
+  const r = await prisma.template.deleteMany({ where: { tenantId, label } });
+  return r.count > 0;
+}
+
+// ── 跨语言群/频道 ─────────────────────────────────────────────────────
+export function getGroupChat(tenantId: string, chatId: string) {
+  return prisma.groupChat.findUnique({ where: { tenantId_chatId: { tenantId, chatId } } });
+}
+
+export function upsertGroupChat(tenantId: string, chatId: string, d: { title?: string; kind?: string; targetLang?: string; enabled?: boolean }) {
+  return prisma.groupChat.upsert({
+    where: { tenantId_chatId: { tenantId, chatId } },
+    create: { tenantId, chatId, title: d.title ?? "", kind: d.kind ?? "group", targetLang: d.targetLang ?? "en", enabled: d.enabled ?? true },
+    update: d,
+  });
+}
+
+// ── 用量看板 ──────────────────────────────────────────────────────────
+/** 近 N 个月的计费口径出站流水(含群翻译),新→旧 */
+export function monthlyHistory(tenantId: string, months = 3) {
+  return prisma.monthlyUsage.findMany({ where: { tenantId }, orderBy: { month: "desc" }, take: months });
+}
+
+/** 某租户本月消息收/发统计(自然月,UTC) */
+export async function tenantMonthStats(tenantId: string): Promise<{ inMsgs: number; outMsgs: number; newContacts: number }> {
+  const start = new Date(`${monthKey()}-01T00:00:00Z`);
+  const [inMsgs, outMsgs, newContacts] = await Promise.all([
+    prisma.message.count({ where: { contact: { tenantId }, direction: "in", createdAt: { gte: start } } }),
+    prisma.message.count({ where: { contact: { tenantId }, direction: { in: ["out", "manual"] }, createdAt: { gte: start } } }),
+    prisma.contact.count({ where: { tenantId, createdAt: { gte: start } } }),
+  ]);
+  return { inMsgs, outMsgs, newContacts };
+}
+
+/** 某联系人最近 N 条往来(旧→新,给 AI 拟稿当上下文) */
+export async function recentMessages(contactId: number, n = 10) {
+  const rows = await prisma.message.findMany({ where: { contactId }, orderBy: { id: "desc" }, take: n });
+  return rows.reverse();
 }
 
 /** 置为 Pro(订阅成功/续费);proUntil 用 Telegram 给的到期时间 */

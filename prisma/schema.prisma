@@ -93,6 +93,41 @@ model AppState {
   value String
 }
 
+// 常用回复模板(每租户;控制台话题里 /t 一键选发,走常规翻译→预览→确认)
+model Template {
+  id        Int      @id @default(autoincrement())
+  tenantId  String
+  label     String // 短标签(按钮上显示)
+  text      String // 母语话术正文
+  createdAt DateTime @default(now())
+
+  @@unique([tenantId, label])
+}
+
+// 跨语言群/频道:租户 bot 被拉进的普通群或频道(非控制台群),非目标语消息自动回译文
+model GroupChat {
+  id         Int      @id @default(autoincrement())
+  tenantId   String
+  chatId     String // 群/频道 chat_id(字符串存,防 Int32 溢出)
+  title      String   @default("")
+  kind       String   @default("group") // group / channel
+  targetLang String   @default("en") // 译入目标语(ISO 639-1)
+  enabled    Boolean  @default(true)
+  createdAt  DateTime @default(now())
+
+  @@unique([tenantId, chatId])
+}
+
+// 按月用量流水(计费口径出站,含群翻译;bumpOutbound 顺带累计,给看板/对账用)
+model MonthlyUsage {
+  id       Int    @id @default(autoincrement())
+  tenantId String
+  month    String // "YYYY-MM"
+  outCount Int    @default(0)
+
+  @@unique([tenantId, month])
+}
+
 // 运营事件:用户遇到的问题埋点(开通失败/权限缺失/发送失败等),日报汇总用。
 // 未开通成功的人不会有 Tenant 行,这张表是看见他们的唯一途径。
 model OpsEvent {

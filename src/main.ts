@@ -23,6 +23,7 @@ async function setPortalCommands() {
     const cmds = [
       { command: "start", description: t("cmd.start", code) },
       { command: "status", description: t("cmd.status", code) },
+      { command: "usage", description: t("cmd.usage", code) },
       { command: "native", description: t("cmd.native", code) },
     ];
     if (config.billingEnabled) {
@@ -58,6 +59,7 @@ void portal.start({
     "business_connection",
     "business_message",
     "message",
+    "channel_post",
     "callback_query",
     "my_chat_member",
     "pre_checkout_query",

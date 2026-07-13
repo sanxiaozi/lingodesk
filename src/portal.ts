@@ -18,6 +18,8 @@ import {
   setTenantNativeLang,
   tenantUsage,
   currentUsage,
+  tenantMonthStats,
+  monthlyHistory,
   setPlanPro,
   setPlanFree,
   logEvent,
@@ -222,6 +224,52 @@ export function attachPortal(bot: Bot): void {
           .filter(Boolean)
           .join("\n"),
       );
+      return;
+    }
+
+    if (text === "/usage") {
+      const tn = await getTenant(uid);
+      if (!tn) {
+        await ctx.reply(t("portal.status_not_activated", lang));
+        return;
+      }
+      const [m, hist] = await Promise.all([tenantMonthStats(tn.id), monthlyHistory(tn.id, 3)]);
+      const quotaLine = config.billingEnabled
+        ? tn.plan === "pro"
+          ? t("portal.usage_quota_pro", lang)
+          : t("portal.usage_quota_free", lang, { used: currentUsage(tn), quota: config.freeQuota })
+        : t("portal.usage_quota_unlimited", lang);
+      const histLines = hist.length
+        ? hist.map((h) => `   ${h.month}: ${h.outCount}`).join("\n")
+        : `   —`;
+      await ctx.reply(
+        [
+          t("portal.usage_header", lang),
+          quotaLine,
+          t("portal.usage_month", lang, { inMsgs: m.inMsgs, outMsgs: m.outMsgs, newContacts: m.newContacts }),
+          t("portal.usage_history", lang),
+          histLines,
+        ].join("\n"),
+      );
+      return;
+    }
+
+    if (isAdmin && text === "/dashboard") {
+      const list = await getAllTenants();
+      const rows = await Promise.all(
+        list.map(async (tn) => {
+          const m = await tenantMonthStats(tn.id);
+          return { tn, m, used: currentUsage(tn) };
+        }),
+      );
+      rows.sort((a, b) => b.used - a.used);
+      const body = rows
+        .map(
+          (r) =>
+            `${r.tn.plan === "pro" ? "⭐" : "  "} @${r.tn.botUsername} — 出站 ${r.used}${r.tn.plan === "free" ? `/${config.freeQuota}` : ""} · 收 ${r.m.inMsgs} · 新客 ${r.m.newContacts}`,
+        )
+        .join("\n");
+      await ctx.reply(`📊 本月用量看板(${list.length} 租户)\n${body || "(无租户)"}`);
       return;
     }
 
