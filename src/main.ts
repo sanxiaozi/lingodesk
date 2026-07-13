@@ -9,9 +9,17 @@ import { attachPortal } from "./portal.js";
 import { startAll, archiveStaleTopics, getRunningCount, setPortalUsername } from "./manager.js";
 import { expireStalePro } from "./db.js";
 import { t, SUPPORTED } from "./i18n.js";
+import { setEngineNotify } from "./ai/_client.js";
 import type { LanguageCode } from "@grammyjs/types";
 
 const portal = new Bot(config.botToken);
+
+// 翻译引擎降级/恢复 → 经门户 bot 私聊管理员
+if (config.adminUserId) {
+  setEngineNotify(async (text) => {
+    await portal.api.sendMessage(config.adminUserId!, text);
+  });
+}
 
 /**
  * 为门户 bot 注册 15 种界面语言的私聊命令菜单(用户在输入框打 / 时看到本地语提示)。

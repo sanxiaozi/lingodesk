@@ -29,6 +29,10 @@ export const config = {
   /** OpenAI 备用(Claude 调用失败时自动兜底) */
   openaiKey: process.env.OPENAI_API_KEY || undefined,
   openaiModel: process.env.OPENAI_MODEL || "gpt-4o-mini",
+  /** DeepSeek 三级兜底(OpenAI 协议兼容,换 baseURL 即接入) */
+  deepseekKey: process.env.DEEPSEEK_API_KEY || undefined,
+  deepseekModel: process.env.DEEPSEEK_MODEL || "deepseek-chat",
+  deepseekBaseUrl: process.env.DEEPSEEK_BASE_URL || "https://api.deepseek.com",
   /** 新客户只发表情/无文本时,延迟多少毫秒自动发开场白 */
   greetDelayMs: process.env.GREET_DELAY_MS ? Number(process.env.GREET_DELAY_MS) : 30_000,
   /** 自动开场白(默认英语,通用) */

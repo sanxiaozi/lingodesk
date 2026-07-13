@@ -104,6 +104,8 @@ async function main() {
     reply_perm_missing: "未开「回复消息」权限",
     translate_fail: "翻译失败",
     send_fail: "发送给客户失败",
+    engine_failover: "翻译主引擎熔断,已降级备用",
+    engine_recovered: "翻译主引擎恢复",
   };
   // 同一人同一问题合并计次,保留最后一次 detail
   const probMap = new Map<string, { who: string; label: string; detail: string; n: number }>();
