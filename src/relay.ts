@@ -103,7 +103,13 @@ export function attachRelay(bot: Bot, tenantId: string, notify?: (text: string) 
   // 群翻译超额提醒限频(每群最多 6 小时提示一次,防刷屏)
   const groupQuotaNoticeAt = new Map<string, number>();
 
-  /** 群/频道消息翻译:非目标语 → 以回复形式贴译文;占免费额度(Pro 不限),超额静默+限频提醒 */
+  /**
+   * 群/频道消息双向翻译(与项目宗旨一致:各说母语,彼此都懂):
+   *   · 你的母语消息 → 译成群目标语贴出(对方看懂你)
+   *   · 其它任何语言 → 译成你的母语贴出(你看懂对方)
+   *   · 母语 = 目标语时退化为单向(全部译成目标语)
+   * 占免费额度(Pro 不限),超额静默+限频提醒。
+   */
   async function groupTranslate(chatId: number, messageId: number, text: string, t: Tenant, g: { targetLang: string }): Promise<void> {
     if (isOverQuota(t)) {
       const key = String(chatId);
@@ -117,10 +123,19 @@ export function attachRelay(bot: Bot, tenantId: string, notify?: (text: string) 
       return;
     }
     try {
-      const r = await translateInbound(text, g.targetLang);
-      // 原文已是目标语 / 译文与原文相同 → 不贴,避免噪音(AI 调用已发生,但不计额度)
-      if (!r.native || r.lang === g.targetLang || r.native.trim() === text.trim()) return;
-      await bot.api.sendMessage(chatId, `🌐 ${r.native}`, { reply_parameters: { message_id: messageId } });
+      // 先按「译入母语」走一次(顺带检测语种)
+      const r = await translateInbound(text, t.nativeLang);
+      let out: string;
+      if (r.lang === t.nativeLang && t.nativeLang !== g.targetLang) {
+        // 你在说母语 → 译成群目标语给对方
+        out = await translateOutbound(text, g.targetLang);
+      } else {
+        // 对方在说外语 → 用刚才的母语译文给你
+        out = r.native;
+      }
+      // 译文与原文相同(如原文已是对应目标语)→ 不贴,避免噪音
+      if (!out || out.trim() === text.trim()) return;
+      await bot.api.sendMessage(chatId, `🌐 ${out}`, { reply_parameters: { message_id: messageId } });
       await bumpOutbound(t.id);
     } catch (e) {
       console.error(`[${tenantId}] 群翻译失败:`, e);
