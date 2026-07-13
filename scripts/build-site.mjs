@@ -18,23 +18,23 @@ const WEB = join(ROOT, "web");
 const OUT = join(ROOT, "site");
 const BASE_URL = "https://lingodesk.org";
 
-// 15 界面语言。label = 切换器里的自称;html = <html lang>;dir = 文字方向
+// 15 界面语言。label = 切换器里的自称;html = <html lang>;dir = 文字方向;og = og:locale(ll_CC)
 const ALL_LANGS = [
-  { code: "en", label: "English", html: "en", dir: "ltr" },
-  { code: "zh", label: "简体中文", html: "zh-CN", dir: "ltr" },
-  { code: "zh-tw", label: "繁體中文", html: "zh-Hant", dir: "ltr" },
-  { code: "es", label: "Español", html: "es", dir: "ltr" },
-  { code: "pt", label: "Português", html: "pt", dir: "ltr" },
-  { code: "ru", label: "Русский", html: "ru", dir: "ltr" },
-  { code: "fr", label: "Français", html: "fr", dir: "ltr" },
-  { code: "id", label: "Bahasa Indonesia", html: "id", dir: "ltr" },
-  { code: "vi", label: "Tiếng Việt", html: "vi", dir: "ltr" },
-  { code: "th", label: "ไทย", html: "th", dir: "ltr" },
-  { code: "tr", label: "Türkçe", html: "tr", dir: "ltr" },
-  { code: "hi", label: "हिन्दी", html: "hi", dir: "ltr" },
-  { code: "bn", label: "বাংলা", html: "bn", dir: "ltr" },
-  { code: "ar", label: "العربية", html: "ar", dir: "rtl" },
-  { code: "ur", label: "اردو", html: "ur", dir: "rtl" },
+  { code: "en", label: "English", html: "en", dir: "ltr", og: "en_US" },
+  { code: "zh", label: "简体中文", html: "zh-CN", dir: "ltr", og: "zh_CN" },
+  { code: "zh-tw", label: "繁體中文", html: "zh-Hant", dir: "ltr", og: "zh_TW" },
+  { code: "es", label: "Español", html: "es", dir: "ltr", og: "es_ES" },
+  { code: "pt", label: "Português", html: "pt", dir: "ltr", og: "pt_BR" },
+  { code: "ru", label: "Русский", html: "ru", dir: "ltr", og: "ru_RU" },
+  { code: "fr", label: "Français", html: "fr", dir: "ltr", og: "fr_FR" },
+  { code: "id", label: "Bahasa Indonesia", html: "id", dir: "ltr", og: "id_ID" },
+  { code: "vi", label: "Tiếng Việt", html: "vi", dir: "ltr", og: "vi_VN" },
+  { code: "th", label: "ไทย", html: "th", dir: "ltr", og: "th_TH" },
+  { code: "tr", label: "Türkçe", html: "tr", dir: "ltr", og: "tr_TR" },
+  { code: "hi", label: "हिन्दी", html: "hi", dir: "ltr", og: "hi_IN" },
+  { code: "bn", label: "বাংলা", html: "bn", dir: "ltr", og: "bn_BD" },
+  { code: "ar", label: "العربية", html: "ar", dir: "rtl", og: "ar_AR" },
+  { code: "ur", label: "اردو", html: "ur", dir: "rtl", og: "ur_PK" },
 ];
 
 // 只生成有字典文件的语言(现成 en/zh/zh-tw;P2 加 web/i18n/es.json 等即自动纳入,下拉/hreflang 随之扩展)
@@ -83,6 +83,75 @@ function autoRedirectBlock(page) {
 </script>`;
 }
 
+// ── SEO:canonical + OG/Twitter + JSON-LD 结构化数据(构建时按页/语言生成) ──
+const stripHtml = (s) => (s ?? "").replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+// JSON 内嵌 <script> 的安全序列化(防 </script> 提前闭合)
+const jsonForScript = (o) => JSON.stringify(o).replaceAll("<", "\\u003c");
+
+function jsonldBlocks(lang, page, dict) {
+  const blocks = [];
+  if (page.tmpl === "index") {
+    blocks.push({
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      name: "LingoDesk",
+      url: BASE_URL,
+      applicationCategory: "BusinessApplication",
+      operatingSystem: "Telegram",
+      description: stripHtml(dict["index.desc"]),
+      inLanguage: lang.html,
+      offers: [
+        { "@type": "Offer", name: "Free", price: "0", priceCurrency: "USD" },
+        { "@type": "Offer", name: "Pro", price: "7", priceCurrency: "USD", description: "500 Telegram Stars / month, unlimited translations" },
+      ],
+    });
+    blocks.push({
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      name: "LingoDesk",
+      url: BASE_URL,
+      logo: `${BASE_URL}/og.png`,
+      email: "hello@lingodesk.org",
+      sameAs: ["https://github.com/sanxiaozi/lingodesk", "https://t.me/LingoDeskbot"],
+    });
+  }
+  if (page.tmpl === "setup") {
+    // FAQ 结构化数据:直接取当前语言字典里的 faq_q/a 对(本地化的富摘要)
+    const qa = [];
+    for (let i = 1; i <= 30; i++) {
+      const q = dict[`setup.faq_q${i}`];
+      const a = dict[`setup.faq_a${i}`];
+      if (q && a) qa.push({ "@type": "Question", name: stripHtml(q), acceptedAnswer: { "@type": "Answer", text: stripHtml(a) } });
+    }
+    if (qa.length) blocks.push({ "@context": "https://schema.org", "@type": "FAQPage", mainEntity: qa });
+  }
+  return blocks.map((b) => `<script type="application/ld+json">${jsonForScript(b)}</script>`).join("\n");
+}
+
+function seoHeadBlock(lang, page, dict) {
+  const url = `${BASE_URL}${pageUrl(lang.code, page)}`;
+  const title = dict[`${page.tmpl}.og_title`] ?? dict[`${page.tmpl}.title`] ?? "LingoDesk";
+  const desc = dict[`${page.tmpl}.og_desc`] ?? dict[`${page.tmpl}.desc`] ?? "";
+  const img = `${BASE_URL}/og.png`;
+  const lines = [
+    `<link rel="canonical" href="${url}">`,
+    `<meta property="og:type" content="website">`,
+    `<meta property="og:site_name" content="LingoDesk">`,
+    `<meta property="og:url" content="${url}">`,
+    `<meta property="og:title" content="${title}">`,
+    `<meta property="og:description" content="${desc}">`,
+    `<meta property="og:image" content="${img}">`,
+    `<meta property="og:image:width" content="1200">`,
+    `<meta property="og:image:height" content="630">`,
+    `<meta property="og:locale" content="${lang.og}">`,
+    `<meta name="twitter:card" content="summary_large_image">`,
+    `<meta name="twitter:image" content="${img}">`,
+  ];
+  const ld = jsonldBlocks(lang, page, dict);
+  if (ld) lines.push(ld);
+  return lines.join("\n");
+}
+
 // 加载字典(当前语言覆盖英文兜底)
 function loadDict(code) {
   const en = JSON.parse(readFileSync(join(WEB, "i18n", "en.json"), "utf8"));
@@ -98,6 +167,7 @@ function render(tmpl, lang, page, dict) {
     .replaceAll("{{dir}}", lang.dir)
     .replaceAll("{{lang}}", lang.code)
     .replaceAll("{{base}}", langBase(lang.code))
+    .replace("{{seoHead}}", seoHeadBlock(lang, page, dict))
     .replace("{{hreflang}}", hreflangBlock(page))
     .replace("{{langSwitcher}}", langSwitcherBlock(lang.code, page))
     .replace("{{autoRedirect}}", autoRedirectBlock(page));
@@ -163,6 +233,32 @@ for (const lang of LANGS)
 const sitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n${urlEntries.join("\n")}\n</urlset>\n`;
 writeFileSync(join(OUT, "sitemap.xml"), sitemap);
 writeFileSync(join(OUT, "robots.txt"), `User-agent: *\nAllow: /\nSitemap: ${BASE_URL}/sitemap.xml\n`);
+
+// 404.html:Cloudflare Pages 有此文件才返回真 404(否则 SPA 回退首页 = 软 404,搜索引擎会索引垃圾 URL)
+writeFileSync(
+  join(OUT, "404.html"),
+  `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>404 · LingoDesk</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<div class="wrap" style="text-align:center;padding-top:18vh">
+  <h1 style="font-size:64px;margin-bottom:8px">404</h1>
+  <p style="color:#aab3c8;margin-bottom:28px">This page doesn't exist — but the conversation can still start.</p>
+  <a class="btn" href="/">← LingoDesk home</a>
+</div>
+</body>
+</html>
+`,
+);
+
+// _redirects:www 收敛到裸域(否则 www 直接 200 = 全站重复内容)
+writeFileSync(join(OUT, "_redirects"), `https://www.lingodesk.org/* ${BASE_URL}/:splat 301\n`);
 
 console.log(`✅ 构建完成:${count} 个页面(${LANGS.length} 语言 × ${PAGES.length} 页)+ sitemap.xml(${urlEntries.length} URL)+ robots.txt`);
 if (missing.size) {
