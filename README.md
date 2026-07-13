@@ -11,7 +11,7 @@ Customers message your **personal Telegram account** in any language. LingoDesk 
 
 - **Inbound**: auto-translated bilingual cards per contact topic; sticker/emoji recognition; photos, voice, documents and video forwarded into the topic and archived locally
 - **Outbound**: type in your language → translated → preview → sent from your own account on confirmation; send files directly too
-- **Robust**: Claude as the primary engine with optional OpenAI fallback; `business_connection_id` auto-refreshed and persisted; per-contact language lock; topics auto-archive after 7 idle days and revive on new messages
+- **Robust**: three-tier engine chain — Claude primary with automatic OpenAI and DeepSeek fallbacks, circuit breaker switches over in seconds and back on recovery; `business_connection_id` auto-refreshed and persisted; per-contact language lock; topics auto-archive after 7 idle days and revive on new messages
 - **Commands**: `/lang <code>` to correct a contact's language, `/help` for the list
 - **15 interface languages**: the website **and** the bot UI are localized into English, 简体/繁体中文, Español, Português, Русский, Français, Bahasa Indonesia, Tiếng Việt, ไทย, Türkçe, हिन्दी, বাংলা, العربية & اردو (RTL supported). The bot replies to each user in their own language (English as the fallback); translation itself works for *any* language — set yours with `/native <code>`.
 
