@@ -122,6 +122,29 @@
   .way li::before { content: "✓"; position: absolute; left: 2px; color: var(--accent-2); font-weight: 700; }
   .way .btn { width: 100%; }
 
+  /* 实战案例:CSS 还原产品真实界面(截图区)+ 真实数据带 */
+  .cases { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; align-items: stretch; }
+  .case { padding: 0; overflow: hidden; display: flex; flex-direction: column; }
+  .shot { background: rgba(0, 0, 0, 0.35); border-bottom: 1px solid var(--border); font-size: 13.5px; }
+  .shot .bar { display: flex; align-items: center; gap: 6px; padding: 10px 14px; border-bottom: 1px solid var(--border); font-size: 11.5px; color: var(--muted); }
+  .shot .bar b { color: var(--text); font-weight: 600; }
+  .shot .bar .dot { width: 8px; height: 8px; }
+  .shotbody { padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 8px; }
+  .stag { font-size: 11.5px; color: var(--accent); font-weight: 650; letter-spacing: 0.04em; }
+  .sorig { color: #c8cede; }
+  .str { color: var(--text); background: var(--panel-2); border: 1px solid var(--border); border-radius: 10px; padding: 8px 12px; }
+  .btnrow { display: flex; gap: 8px; margin-top: 2px; }
+  .btnchip { font-size: 12px; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--panel); color: var(--muted); white-space: nowrap; }
+  .btnchip.ok { background: var(--grad); color: #fff; border-color: transparent; font-weight: 600; }
+  .case figcaption { padding: 16px 18px 20px; }
+  .case figcaption h3 { font-size: 16.5px; font-weight: 700; letter-spacing: -0.01em; margin-bottom: 4px; }
+  .case figcaption p { font-size: 13.5px; color: var(--muted); line-height: 1.55; }
+  .proof { margin-top: 16px; padding: 24px 28px; display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+  .pstats { display: flex; gap: 36px; }
+  .pstat b { display: block; font-size: 26px; font-weight: 760; letter-spacing: -0.02em; color: var(--accent-2); }
+  .pstat span { font-size: 12.5px; color: var(--muted); }
+  .pnote { font-size: 13.5px; color: var(--muted); max-width: 440px; line-height: 1.6; }
+
   /* 尾部 CTA 带 */
   .final { margin: 84px 0 8px; padding: 58px 32px; text-align: center; position: relative; overflow: hidden; }
   .final::before { content: ""; position: absolute; inset: -40%; background: radial-gradient(50% 50% at 50% 50%, rgba(79, 140, 255, 0.16), transparent 70%); }
@@ -133,9 +156,10 @@
     .hero { grid-template-columns: 1fr; padding-top: 56px; gap: 56px; }
     .hero .sub { max-width: none; }
     .steps { grid-template-columns: 1fr 1fr; }
+    .cases { grid-template-columns: 1fr; }
   }
   @media (max-width: 620px) {
-    .steps, .grid, .ways { grid-template-columns: 1fr; }
+    .steps, .grid, .ways, .cases { grid-template-columns: 1fr; }
     .stage { min-height: 400px; }
     .console { left: 0; top: 60px; }
     .bubble { max-width: 240px; }
@@ -234,6 +258,55 @@
         <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="5" rx="1"/><path d="M4 9v9a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9"/><path d="M10 13h4"/></svg></div>
         <div><h3>{{index.feat4_h}}</h3><p>{{index.feat4_p}}</p></div>
       </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="kicker reveal">{{index.cases_kicker}}</div>
+    <h2 class="title reveal">{{index.cases_title}}</h2>
+    <p class="lead reveal">{{index.cases_lead}}</p>
+    <div class="cases">
+      <figure class="case glass reveal">
+        <div class="shot" dir="ltr">
+          <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span>&nbsp;&nbsp;<b>{{index.case1_bar}}</b>&nbsp;· @cliente_mx</div>
+          <div class="shotbody">
+            <div class="stag">{{index.case1_tag}}</div>
+            <div class="sorig">Hola, ¿cuándo llega mi pedido? 📦</div>
+            <div class="str">🌐 {{index.case1_tr}}</div>
+          </div>
+        </div>
+        <figcaption><h3>{{index.case1_h}}</h3><p>{{index.case1_p}}</p></figcaption>
+      </figure>
+      <figure class="case glass reveal">
+        <div class="shot" dir="ltr">
+          <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span>&nbsp;&nbsp;<b>{{index.case1_bar}}</b>&nbsp;· @cliente_mx</div>
+          <div class="shotbody">
+            <div class="stag">{{index.case2_head}}</div>
+            <div class="str">Tu pedido sale mañana y llega en 5 días. 🚚</div>
+            <div class="btnrow"><span class="btnchip ok">{{index.case2_send}}</span><span class="btnchip">{{index.case2_cancel}}</span></div>
+          </div>
+        </div>
+        <figcaption><h3>{{index.case2_h}}</h3><p>{{index.case2_p}}</p></figcaption>
+      </figure>
+      <figure class="case glass reveal">
+        <div class="shot" dir="ltr">
+          <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span>&nbsp;&nbsp;<b>{{index.case3_bar}}</b></div>
+          <div class="shotbody">
+            <div class="stag">Pavel</div>
+            <div class="sorig">Можем перенести встречу на пятницу?</div>
+            <div class="str">🌐 {{index.case3_tr}}</div>
+          </div>
+        </div>
+        <figcaption><h3>{{index.case3_h}}</h3><p>{{index.case3_p}}</p></figcaption>
+      </figure>
+    </div>
+    <div class="proof glass reveal">
+      <div class="pstats">
+        <div class="pstat"><b>360+</b><span>{{index.proof_msgs}}</span></div>
+        <div class="pstat"><b>15</b><span>{{index.proof_langs}}</span></div>
+        <div class="pstat"><b>24/7</b><span>{{index.proof_uptime}}</span></div>
+      </div>
+      <p class="pnote">{{index.proof_note}}</p>
     </div>
   </section>
 

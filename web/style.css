@@ -133,4 +133,4 @@ footer a:hover { color: var(--text); }
 [dir="rtl"] .way .pill { left: auto; right: 28px; }
 [dir="rtl"] .icon { margin-right: 0; }
 /* mockup 与终端块内是外语/命令示例,强制 LTR 以免镜像错乱 */
-[dir="rtl"] .stage, [dir="rtl"] .term, [dir="rtl"] .console, [dir="rtl"] .chat, [dir="rtl"] .path { direction: ltr; }
+[dir="rtl"] .stage, [dir="rtl"] .term, [dir="rtl"] .console, [dir="rtl"] .chat, [dir="rtl"] .path, [dir="rtl"] .shot { direction: ltr; }
