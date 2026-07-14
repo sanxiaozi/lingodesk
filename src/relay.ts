@@ -135,7 +135,12 @@ export function attachRelay(bot: Bot, tenantId: string, notify?: (text: string) 
       }
       // 译文与原文相同(如原文已是对应目标语)→ 不贴,避免噪音
       if (!out || out.trim() === text.trim()) return;
-      await bot.api.sendMessage(chatId, `🌐 ${who ? `${who}: ` : ""}${out}`, { reply_parameters: { message_id: messageId } });
+      // 名字加粗醒目(Telegram 不支持自定义颜色);HTML 需转义,防名字/译文里的 <>& 破坏格式
+      const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      await bot.api.sendMessage(chatId, `🌐 ${who ? `<b>${esc(who)}</b>: ` : ""}${esc(out)}`, {
+        parse_mode: "HTML",
+        reply_parameters: { message_id: messageId },
+      });
       await bumpOutbound(t.id);
     } catch (e) {
       console.error(`[${tenantId}] 群翻译失败:`, e);
