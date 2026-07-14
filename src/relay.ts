@@ -108,9 +108,9 @@ export function attachRelay(bot: Bot, tenantId: string, notify?: (text: string) 
    *   · 你的母语消息 → 译成群目标语贴出(对方看懂你)
    *   · 其它任何语言 → 译成你的母语贴出(你看懂对方)
    *   · 母语 = 目标语时退化为单向(全部译成目标语)
-   * 占免费额度(Pro 不限),超额静默+限频提醒。
+   * 译文带上说话人名字(人多的群一眼看清谁说的);占免费额度(Pro 不限),超额静默+限频提醒。
    */
-  async function groupTranslate(chatId: number, messageId: number, text: string, t: Tenant, g: { targetLang: string }): Promise<void> {
+  async function groupTranslate(chatId: number, messageId: number, text: string, t: Tenant, g: { targetLang: string }, who?: string): Promise<void> {
     if (isOverQuota(t)) {
       const key = String(chatId);
       if (Date.now() - (groupQuotaNoticeAt.get(key) ?? 0) > 6 * 3600_000) {
@@ -135,7 +135,7 @@ export function attachRelay(bot: Bot, tenantId: string, notify?: (text: string) 
       }
       // 译文与原文相同(如原文已是对应目标语)→ 不贴,避免噪音
       if (!out || out.trim() === text.trim()) return;
-      await bot.api.sendMessage(chatId, `🌐 ${out}`, { reply_parameters: { message_id: messageId } });
+      await bot.api.sendMessage(chatId, `🌐 ${who ? `${who}: ` : ""}${out}`, { reply_parameters: { message_id: messageId } });
       await bumpOutbound(t.id);
     } catch (e) {
       console.error(`[${tenantId}] 群翻译失败:`, e);
@@ -482,8 +482,15 @@ export function attachRelay(bot: Bot, tenantId: string, notify?: (text: string) 
       const g = await getGroupChat(tenantId, String(ctx.chat.id));
       if (g?.enabled && t) {
         const gtext = ctx.message.text ?? ctx.message.caption;
-        if (gtext && !gtext.startsWith("/") && gtext.length >= 2 && !ctx.from?.is_bot)
-          await groupTranslate(ctx.chat.id, ctx.message.message_id, gtext, t, g);
+        if (gtext && !gtext.startsWith("/") && gtext.length >= 2 && !ctx.from?.is_bot) {
+          // 译文冠以说话人名字:优先展示名(群里更好认),没有再用 @username
+          const who = ctx.from?.first_name
+            ? `${ctx.from.first_name}${ctx.from.last_name ? " " + ctx.from.last_name : ""}`
+            : ctx.from?.username
+              ? `@${ctx.from.username}`
+              : undefined;
+          await groupTranslate(ctx.chat.id, ctx.message.message_id, gtext, t, g, who);
+        }
         return;
       }
       return next();
@@ -648,7 +655,8 @@ export function attachRelay(bot: Bot, tenantId: string, notify?: (text: string) 
     }
     const g = await getGroupChat(tenantId, chatId);
     if (!g?.enabled || text.length < 2) return;
-    await groupTranslate(ctx.chat.id, post.message_id, text, t, g);
+    // 频道帖以频道名义发布,仅在开了署名时冠作者名
+    await groupTranslate(ctx.chat.id, post.message_id, text, t, g, post.author_signature ?? undefined);
   });
 
   // ── 按钮回调:出站确认 / 模板选发 ────────────────────────────────────
