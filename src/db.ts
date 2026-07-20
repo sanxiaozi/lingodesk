@@ -202,7 +202,59 @@ export async function expireStalePro(): Promise<number> {
     where: { plan: "pro", proUntil: { lt: new Date() } },
     data: { plan: "free", proUntil: null },
   });
-  return r.count;
+  const r2 = await prisma.liteUser.updateMany({
+    where: { plan: "pro", proUntil: { lt: new Date() } },
+    data: { plan: "free", proUntil: null },
+  });
+  return r.count + r2.count;
+}
+
+// ── 轻量用户(免 Premium 玩法:内联/私聊翻译) ─────────────────────────
+export type { LiteUser } from "@prisma/client";
+
+/** 取或建轻量用户;首次按 Telegram 客户端语言初始化母语 */
+export function getOrCreateLiteUser(id: string, langCode?: string) {
+  const native = (langCode ?? "en").toLowerCase().startsWith("zh") ? "zh" : (langCode ?? "en").slice(0, 2) || "en";
+  return prisma.liteUser.upsert({ where: { id }, create: { id, nativeLang: native }, update: {} });
+}
+
+export function updateLiteUser(id: string, data: { nativeLang?: string; targetLang?: string }) {
+  return prisma.liteUser.update({ where: { id }, data });
+}
+
+export function liteUsage(u: { usageMonth: string; usageCount: number }): number {
+  return u.usageMonth === monthKey() ? u.usageCount : 0;
+}
+
+export function isLiteOverQuota(u: { plan: string; usageMonth: string; usageCount: number }): boolean {
+  if (!config.billingEnabled || u.plan === "pro") return false;
+  return liteUsage(u) >= config.freeQuota;
+}
+
+/** 轻量用户计一条翻译(跨月重置;同时写 MonthlyUsage 流水,tenantId 复用其 user.id) */
+export async function bumpLite(id: string): Promise<void> {
+  const u = await prisma.liteUser.findUnique({ where: { id } });
+  if (!u) return;
+  const mk = monthKey();
+  await prisma.liteUser.update({
+    where: { id },
+    data: u.usageMonth === mk ? { usageCount: { increment: 1 } } : { usageMonth: mk, usageCount: 1 },
+  });
+  await prisma.monthlyUsage
+    .upsert({
+      where: { tenantId_month: { tenantId: id, month: mk } },
+      create: { tenantId: id, month: mk, outCount: 1 },
+      update: { outCount: { increment: 1 } },
+    })
+    .catch(() => {});
+}
+
+export function setLitePlanPro(id: string, proUntil: Date, chargeId?: string) {
+  return prisma.liteUser.upsert({
+    where: { id },
+    create: { id, plan: "pro", proUntil, subChargeId: chargeId ?? "" },
+    update: { plan: "pro", proUntil, ...(chargeId ? { subChargeId: chargeId } : {}) },
+  });
 }
 
 // ── 联系人 ────────────────────────────────────────────────────────────

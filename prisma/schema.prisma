@@ -128,6 +128,21 @@ model MonthlyUsage {
   @@unique([tenantId, month])
 }
 
+// 轻量用户:免 Premium 玩法(内联翻译/私聊转发翻译)的额度与语言偏好。
+// 与租户身份独立并存;额度与套餐判断上,有租户的用户以租户为准。
+model LiteUser {
+  id          String    @id // Telegram user.id
+  nativeLang  String    @default("en") // 母语(译入方向)
+  targetLang  String    @default("en") // 内联/私聊译出的目标语(/to 设置)
+  plan        String    @default("free") // free / pro(无租户的用户也能直接订 Pro)
+  proUntil    DateTime?
+  subChargeId String    @default("")
+  usageMonth  String    @default("")
+  usageCount  Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
 // 运营事件:用户遇到的问题埋点(开通失败/权限缺失/发送失败等),日报汇总用。
 // 未开通成功的人不会有 Tenant 行,这张表是看见他们的唯一途径。
 model OpsEvent {

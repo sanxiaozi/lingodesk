@@ -23,7 +23,15 @@ import {
   setPlanPro,
   setPlanFree,
   logEvent,
+  isOverQuota,
+  bumpOutbound,
+  getOrCreateLiteUser,
+  updateLiteUser,
+  liteUsage,
+  isLiteOverQuota,
+  bumpLite,
 } from "./db.js";
+import { translateInbound, translateOutbound } from "./ai/translate.js";
 import { startTenant, stopTenant, isRunning, getRunningCount } from "./manager.js";
 import { sendProInvoice, handleSuccessfulPayment, paySupportText } from "./billing.js";
 
@@ -157,12 +165,10 @@ export function attachPortal(bot: Bot): void {
     // ── 用户命令 ──────────────────────────────────────────────────────
     // deep link:控制台超额引导过来的 https://t.me/LingoDeskbot?start=subscribe
     if (text === "/start subscribe" || text === "/subscribe") {
+      // 有租户看租户套餐;没租户 = 轻量用户(内联/私聊翻译)也允许直接订 Pro
       const tn = await getTenant(uid);
-      if (!tn) {
-        await ctx.reply(t("portal.subscribe_not_activated", lang));
-        return;
-      }
-      if (tn.plan === "pro") {
+      const lu = tn ? null : await getOrCreateLiteUser(uid, ctx.from.language_code);
+      if ((tn ?? lu)?.plan === "pro") {
         await ctx.reply(t("portal.subscribe_already_pro", lang));
         return;
       }
@@ -230,7 +236,16 @@ export function attachPortal(bot: Bot): void {
     if (text === "/usage") {
       const tn = await getTenant(uid);
       if (!tn) {
-        await ctx.reply(t("portal.status_not_activated", lang));
+        // 轻量用户:只展示额度与近月流水(无中继消息统计)
+        const lu = await getOrCreateLiteUser(uid, ctx.from.language_code);
+        const quotaLine = config.billingEnabled
+          ? lu.plan === "pro"
+            ? t("portal.usage_quota_pro", lang)
+            : t("portal.usage_quota_free", lang, { used: liteUsage(lu), quota: config.freeQuota })
+          : t("portal.usage_quota_unlimited", lang);
+        const hist = await monthlyHistory(uid, 3);
+        const histLines = hist.length ? hist.map((h) => `   ${h.month}: ${h.outCount}`).join("\n") : "   —";
+        await ctx.reply([t("portal.usage_header", lang), quotaLine, t("portal.usage_history", lang), histLines].join("\n"));
         return;
       }
       const [m, hist] = await Promise.all([tenantMonthStats(tn.id), monthlyHistory(tn.id, 3)]);
@@ -280,12 +295,27 @@ export function attachPortal(bot: Bot): void {
         return;
       }
       const tn = await getTenant(uid);
-      if (!tn) {
-        await ctx.reply(t("portal.not_activated_short", lang));
+      if (tn) {
+        await setTenantNativeLang(uid, code);
+      } else {
+        // 未开通也能用:内联/私聊翻译的母语设置
+        await getOrCreateLiteUser(uid, ctx.from.language_code);
+        await updateLiteUser(uid, { nativeLang: code });
+      }
+      await ctx.reply(t("portal.native_set", code, { lang: code }));
+      return;
+    }
+
+    // /to <码>:内联/私聊翻译的译出目标语(免 Premium 玩法)
+    if (text.startsWith("/to")) {
+      const code = (text.split(/\s+/)[1] ?? "").toLowerCase();
+      if (!/^[a-z]{2,3}$/.test(code)) {
+        await ctx.reply(t("portal.to_usage", lang));
         return;
       }
-      await setTenantNativeLang(uid, code);
-      await ctx.reply(t("portal.native_set", lang, { lang: code }));
+      await getOrCreateLiteUser(uid, ctx.from.language_code);
+      await updateLiteUser(uid, { targetLang: code });
+      await ctx.reply(t("portal.to_set", lang, { lang: code, bot: ctx.me.username }));
       return;
     }
 
@@ -351,12 +381,45 @@ export function attachPortal(bot: Bot): void {
       return;
     }
 
-    // 兜底引导
-    await ctx.reply(
-      config.billingEnabled
-        ? t("portal.fallback_billing", lang)
-        : t("portal.fallback_nobilling", lang),
-    );
+    // 未识别的命令 → 兜底引导
+    if (text.startsWith("/")) {
+      await ctx.reply(
+        config.billingEnabled
+          ? t("portal.fallback_billing", lang)
+          : t("portal.fallback_nobilling", lang),
+      );
+      return;
+    }
+
+    // ── 免 Premium 私聊翻译:非命令文本/转发的消息 = 翻译请求 ──────────
+    // 外语 → 译成母语看懂;母语 → 译成 /to 目标语(译文 <code> 可点按复制)
+    const tn2 = await getTenant(uid);
+    const lu = await getOrCreateLiteUser(uid, ctx.from.language_code);
+    const native = tn2?.nativeLang || lu.nativeLang;
+    if (tn2 ? isOverQuota(tn2) : isLiteOverQuota(lu)) {
+      await ctx.reply(t("portal.lite_quota_full", lang, { quota: config.freeQuota }));
+      return;
+    }
+    try {
+      const firstUse = !tn2 && lu.usageMonth === ""; // 从未用过 → 附一次玩法提示
+      const r = await translateInbound(text, native);
+      let out = r.native;
+      let dir = native;
+      if (r.lang === native && native !== lu.targetLang) {
+        out = await translateOutbound(text, lu.targetLang);
+        dir = lu.targetLang;
+      }
+      const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      const hint = firstUse ? `\n\n${esc(t("portal.lite_hint", lang, { lang: lu.targetLang, bot: ctx.me.username }))}` : "";
+      await ctx.reply(`🌐 → ${dir}\n<code>${esc(out)}</code>${hint}`, { parse_mode: "HTML" });
+      if (tn2) await bumpOutbound(tn2.id);
+      else await bumpLite(uid);
+    } catch (e) {
+      console.error("私聊翻译失败:", e);
+      await ctx.reply(
+        config.billingEnabled ? t("portal.fallback_billing", lang) : t("portal.fallback_nobilling", lang),
+      );
+    }
   });
 
   // 订阅支付:预检查(须 10 秒内应答 true,否则不扣款)
@@ -366,4 +429,67 @@ export function attachPortal(bot: Bot): void {
 
   // 订阅支付:成功(首购 + 每月自动续费都到这里)
   bot.on("message:successful_payment", (ctx) => handleSuccessfulPayment(ctx));
+
+  // ── 免 Premium 内联翻译:任意聊天里打 @bot 文字 → 点选即以本人名义发出译文 ──
+  // 需在 BotFather 开启 /setinline;计量在 chosen_inline_result(真正发出才扣额度,
+  // 需 /setinlinefeedback 100%)。600ms 防抖:只译用户停顿后的最后一版,免得每敲一键都调 AI。
+  const inlineTimers = new Map<string, ReturnType<typeof setTimeout>>();
+  bot.on("inline_query", async (ctx) => {
+    const q = ctx.inlineQuery.query.trim();
+    const uid = String(ctx.from.id);
+    if (q.length < 2) {
+      await ctx.answerInlineQuery([], { cache_time: 0 }).catch(() => {});
+      return;
+    }
+    const prev = inlineTimers.get(uid);
+    if (prev) clearTimeout(prev);
+    inlineTimers.set(
+      uid,
+      setTimeout(async () => {
+        inlineTimers.delete(uid);
+        try {
+          const tn = await getTenant(uid);
+          const lu = await getOrCreateLiteUser(uid, ctx.from.language_code);
+          const lang2 = tn?.nativeLang || lu.nativeLang;
+          if (tn ? isOverQuota(tn) : isLiteOverQuota(lu)) {
+            // 额度用尽:不给结果,给一个跳到私聊订阅的按钮
+            await ctx.answerInlineQuery([], {
+              cache_time: 5,
+              is_personal: true,
+              button: { text: t("portal.inline_quota_btn", lang2), start_parameter: "subscribe" },
+            });
+            return;
+          }
+          const native = tn?.nativeLang || lu.nativeLang;
+          const r = await translateInbound(q, native);
+          const outbound = r.lang === native && native !== lu.targetLang;
+          const out = outbound ? await translateOutbound(q, lu.targetLang) : r.native;
+          const dir = outbound ? lu.targetLang : native;
+          await ctx.answerInlineQuery(
+            [
+              {
+                type: "article",
+                id: "tr",
+                title: out.slice(0, 64),
+                description: `🌐 → ${dir}`,
+                input_message_content: { message_text: out },
+              },
+            ],
+            { cache_time: 30, is_personal: true },
+          );
+        } catch (e) {
+          console.error("内联翻译失败:", e);
+          await ctx.answerInlineQuery([], { cache_time: 0 }).catch(() => {});
+        }
+      }, 600),
+    );
+  });
+
+  // 用户真的点选发出了译文 → 计一条额度
+  bot.on("chosen_inline_result", async (ctx) => {
+    const uid = String(ctx.from.id);
+    const tn = await getTenant(uid);
+    if (tn) await bumpOutbound(tn.id);
+    else await bumpLite(uid);
+  });
 }

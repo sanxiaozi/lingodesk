@@ -33,6 +33,7 @@ async function setPortalCommands() {
       { command: "status", description: t("cmd.status", code) },
       { command: "usage", description: t("cmd.usage", code) },
       { command: "native", description: t("cmd.native", code) },
+      { command: "to", description: t("cmd.to", code) },
     ];
     if (config.billingEnabled) {
       cmds.push({ command: "subscribe", description: t("cmd.subscribe", code) });
@@ -71,6 +72,8 @@ void portal.start({
     "callback_query",
     "my_chat_member",
     "pre_checkout_query",
+    "inline_query",
+    "chosen_inline_result",
   ],
   onStart: (me) => {
     setPortalUsername(me.username);

@@ -8,7 +8,7 @@
 import type { Context } from "grammy";
 import { config } from "./config.js";
 import { t, resolveUiLang } from "./i18n.js";
-import { getTenant, setPlanPro } from "./db.js";
+import { getTenant, setPlanPro, setLitePlanPro } from "./db.js";
 
 export const PRO_PAYLOAD = "lingodesk_pro_monthly";
 const PERIOD = 2592000; // 30 天(秒),Telegram 订阅唯一允许的周期
@@ -55,14 +55,12 @@ export async function handleSuccessfulPayment(ctx: Context): Promise<void> {
   if (tenant) {
     await setPlanPro(uid, until, sp.telegram_payment_charge_id);
     console.log(`💫 ${isRenewal ? "续费" : "订阅"} Pro:${uid} @${tenant.botUsername} → ${until.toISOString().slice(0, 10)}`);
+  } else {
+    // 无租户的轻量用户(内联/私聊翻译)也能直接订 Pro
+    await setLitePlanPro(uid, until, sp.telegram_payment_charge_id);
+    console.log(`💫 ${isRenewal ? "续费" : "订阅"} Lite Pro:${uid} → ${until.toISOString().slice(0, 10)}`);
   }
-  await ctx.reply(
-    !tenant
-      ? t("billing.pay_no_tenant", lang)
-      : isRenewal
-        ? t("billing.pay_renewed", lang)
-        : t("billing.pay_upgraded", lang),
-  );
+  await ctx.reply(isRenewal ? t("billing.pay_renewed", lang) : t("billing.pay_upgraded", lang));
 }
 
 /** 支付支持文案(给某语言的租户看) */
