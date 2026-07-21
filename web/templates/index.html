@@ -143,6 +143,14 @@
   .pstat span { font-size: 12.5px; color: var(--muted); }
   .pnote { font-size: 13.5px; color: var(--muted); max-width: 440px; line-height: 1.6; }
 
+  /* 免 Premium 三件套 */
+  .free3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .fcard { padding: 26px 24px; }
+  .fcard .fico { font-size: 28px; margin-bottom: 10px; }
+  .fcard h3 { font-size: 16.5px; font-weight: 700; letter-spacing: -0.01em; margin-bottom: 6px; }
+  .fcard p { font-size: 13.5px; color: var(--muted); line-height: 1.6; }
+  .free-cta { text-align: center; margin-top: 22px; }
+
   /* 尾部 CTA 带 */
   .final { margin: 84px 0 8px; padding: 58px 32px; text-align: center; position: relative; overflow: hidden; }
   .final::before { content: ""; position: absolute; inset: -40%; background: radial-gradient(50% 50% at 50% 50%, rgba(79, 140, 255, 0.16), transparent 70%); }
@@ -157,7 +165,7 @@
     .cases { grid-template-columns: 1fr; }
   }
   @media (max-width: 620px) {
-    .steps, .grid, .ways, .cases { grid-template-columns: 1fr; }
+    .steps, .grid, .ways, .cases, .free3 { grid-template-columns: 1fr; }
     .stage { min-height: 400px; }
     .console { left: 0; top: 60px; }
     .bubble { max-width: 240px; }
@@ -309,6 +317,18 @@
       </div>
       <p class="pnote">{{index.proof_note}}</p>
     </div>
+  </section>
+
+  <section>
+    <div class="kicker reveal">{{index.free_kicker}}</div>
+    <h2 class="title reveal">{{index.free_title}}</h2>
+    <p class="lead reveal">{{index.free_lead}}</p>
+    <div class="free3">
+      <div class="fcard glass reveal"><div class="fico">📩</div><h3>{{index.freeA_h}}</h3><p>{{index.freeA_p}}</p></div>
+      <div class="fcard glass reveal"><div class="fico">⌨️</div><h3>{{index.freeB_h}}</h3><p>{{index.freeB_p}}</p></div>
+      <div class="fcard glass reveal"><div class="fico">👥</div><h3>{{index.freeC_h}}</h3><p>{{index.freeC_p}}</p></div>
+    </div>
+    <div class="free-cta reveal"><a class="btn" href="https://t.me/LingoDeskbot">{{index.free3_cta}}</a></div>
   </section>
 
   <section>
