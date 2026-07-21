@@ -106,6 +106,7 @@ async function main() {
     send_fail: "发送给客户失败",
     engine_failover: "翻译主引擎熔断,已降级备用",
     engine_recovered: "翻译主引擎恢复",
+    no_premium_activation: "无 Premium 却开通了中继(会卡在 Business 绑定,已获免费玩法指引)",
   };
   // 同一人同一问题合并计次,保留最后一次 detail
   const probMap = new Map<string, { who: string; label: string; detail: string; n: number }>();

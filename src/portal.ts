@@ -187,7 +187,11 @@ export function attachPortal(bot: Bot): void {
     }
 
     if (text === "/start" || text === "/help") {
-      await ctx.reply(t("portal.welcome", lang), { link_preview_options: { is_disabled: true } });
+      // 非 Premium 用户在欢迎语后追加提示:完整中继需 Premium,免费三件套现在就能用
+      const premiumNote = ctx.from.is_premium
+        ? ""
+        : "\n\n" + t("portal.welcome_premium_note", lang, { bot: ctx.me.username });
+      await ctx.reply(t("portal.welcome", lang) + premiumNote, { link_preview_options: { is_disabled: true } });
       return;
     }
 
@@ -212,8 +216,14 @@ export function attachPortal(bot: Bot): void {
             ? t("portal.status_running", lang)
             : t("portal.status_starting", lang)
           : t("portal.status_disabled", lang, { note: tn.statusNote ?? "" });
-      const connVal = tn.connId ? "✅" : t("portal.status_conn_off", lang);
-      const replyVal = tn.canReply ? "✅" : t("portal.status_reply_off", lang);
+      // 未连接时:没有 Premium 的账号根本没有「Telegram Business」入口,要说真话并指路免费玩法
+      const connVal = tn.connId
+        ? "✅"
+        : ctx.from.is_premium
+          ? t("portal.status_conn_off", lang)
+          : t("portal.status_conn_need_premium", lang, { bot: ctx.me.username });
+      // 回复权限在未绑定连接前无意义,显示 —(避免误导性的 ✅)
+      const replyVal = tn.connId ? (tn.canReply ? "✅" : t("portal.status_reply_off", lang)) : "—";
       const forumVal = tn.forumChatId ? t("portal.status_forum_ok", lang) : t("portal.status_forum_off", lang);
       await ctx.reply(
         [
@@ -373,7 +383,10 @@ export function attachPortal(bot: Bot): void {
       await delToken;
       // 最高频卡点前置拦截:Business Mode 没开就把修复指引顶在最前面
       if (!me.canBusiness) logEvent(uid, "secretary_mode_off", `@${me.username}`, ctx.from.username ?? ctx.from.first_name ?? "");
-      const prefix = me.canBusiness ? "" : t("portal.business_mode_fix", lang) + "\n\n";
+      // 非 Premium 账号:Telegram Business 入口根本不存在,提前说明白 + 指路免费玩法
+      if (!ctx.from.is_premium) logEvent(uid, "no_premium_activation", `@${me.username}`, ctx.from.username ?? ctx.from.first_name ?? "");
+      const premiumWarn = ctx.from.is_premium ? "" : t("portal.premium_needed_notice", lang, { bot: ctx.me.username }) + "\n\n";
+      const prefix = premiumWarn + (me.canBusiness ? "" : t("portal.business_mode_fix", lang) + "\n\n");
       await ctx.reply(prefix + t("portal.activated", lang, { bot: me.username }), {
         link_preview_options: { is_disabled: true },
       });
