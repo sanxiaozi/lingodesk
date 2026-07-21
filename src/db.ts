@@ -277,6 +277,7 @@ export function createContact(data: {
   threadId: number;
   name: string;
   connId?: string;
+  viaBot?: boolean;
 }) {
   return prisma.contact.create({ data });
 }

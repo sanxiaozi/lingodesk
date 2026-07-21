@@ -77,7 +77,9 @@ export async function startTenant(t: Tenant): Promise<void> {
   }
 
   const b = new Bot(token);
-  attachRelay(b, t.id, notify);
+  // 独立租户 bot 启用 Bot 门面(客户直接私聊 bot 即进控制台,免 Premium);
+  // 门户共享实例不启用(其私聊是轻量翻译入口)
+  attachRelay(b, t.id, notify, { botFront: true });
   running.set(t.id, b);
   void b
     .start({

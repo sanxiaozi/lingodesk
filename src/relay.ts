@@ -12,7 +12,7 @@
  *   · 译客户语 → 预览确认 → 经 business_connection 以租户名义发出 → 存档
  *   · 文件/图/视频 → 直接转发给客户 + 存档
  */
-import type { Bot } from "grammy";
+import type { Bot, Context } from "grammy";
 import { config } from "./config.js";
 import { t as tr } from "./i18n.js";
 import { translateInbound, translateOutbound, langName } from "./ai/translate.js";
@@ -67,10 +67,16 @@ interface PendingOut {
   lang: string;
   translated: string;
   original: string;
+  viaBot?: boolean; // Bot 门面客户:确认后走普通发送(无需 business 连接)
 }
 
-/** 把整套中继 handler 挂到 bot 实例上(每租户一份闭包状态)。notify=经门户私聊提醒租户(可选) */
-export function attachRelay(bot: Bot, tenantId: string, notify?: (text: string) => Promise<void>): void {
+/**
+ * 把整套中继 handler 挂到 bot 实例上(每租户一份闭包状态)。
+ * notify = 经门户私聊提醒租户(可选);
+ * opts.botFront = 启用 Bot 门面模式(客户直接私聊本 bot 即进控制台;
+ *   官方门户实例必须关——它的私聊是轻量翻译入口,会冲突)。
+ */
+export function attachRelay(bot: Bot, tenantId: string, notify?: (text: string) => Promise<void>, opts?: { botFront?: boolean }): void {
   // 开场白定时器(内存,重启丢失可接受,延迟仅 30s)
   const greetTimers = new Map<string, ReturnType<typeof setTimeout>>();
   // 出站待确认译文(预览 → 确认后才发客户),内存存储,重启失效
@@ -78,11 +84,11 @@ export function attachRelay(bot: Bot, tenantId: string, notify?: (text: string) 
   let pendingSeq = 0;
 
   /** 统一出站预览:母语文本 → 译客户语 → Topic 里弹预览卡(确认才发)。打字/模板/AI 拟稿共用 */
-  async function startPreview(t: Tenant, contact: { id: number; chatId: string; connId: string | null; lang: string }, threadId: number, text: string): Promise<void> {
+  async function startPreview(t: Tenant, contact: { id: number; chatId: string; connId: string | null; lang: string; viaBot?: boolean }, threadId: number, text: string): Promise<void> {
     const targetLang = resolveLang(contact.lang);
     const translated = await translateOutbound(text, targetLang);
     const token = ++pendingSeq;
-    pendingOut.set(token, { contactId: contact.id, chatId: contact.chatId, connId: contact.connId ?? undefined, lang: targetLang, translated, original: text });
+    pendingOut.set(token, { contactId: contact.id, chatId: contact.chatId, connId: contact.connId ?? undefined, lang: targetLang, translated, original: text, viaBot: contact.viaBot ?? false });
     await bot.api.sendMessage(
       Number(t.forumChatId),
       tr("relay.preview", t.nativeLang, { lang: targetLang, translated, original: text }),
@@ -251,6 +257,81 @@ export function attachRelay(bot: Bot, tenantId: string, notify?: (text: string) 
     }
     return next();
   });
+
+  /**
+   * Bot 门面入站:客户私聊租户 bot 的消息 → 控制台话题双语卡片。
+   * 与 Premium 中继同一套联系人/话题/卡片体系(contact.viaBot=true,出站走普通发送)。
+   */
+  async function botFrontInbound(ctx: { message: NonNullable<Context["message"]>; api: Bot["api"] }, t: Tenant): Promise<void> {
+    const m = ctx.message;
+    if (!m.from) return;
+    return withLock(String(m.from.id), async () => {
+      const forum = Number(t.forumChatId);
+      const tgId = String(m.from!.id);
+      const chatId = String(m.chat.id);
+      const name = displayName(m.from);
+      const existing = await getContact(tenantId, tgId);
+
+      if (existing && existing.archived && existing.threadId != null) {
+        try {
+          await ctx.api.reopenForumTopic(forum, existing.threadId);
+        } catch (e) {
+          console.error(`[${tenantId}] 复活 Topic 失败:`, e);
+        }
+        await setArchived(existing.id, false);
+      }
+
+      const ensure = async (): Promise<{ id: number; threadId: number; isNew: boolean }> => {
+        if (existing?.threadId != null) return { id: existing.id, threadId: existing.threadId, isNew: false };
+        const topic = await ctx.api.createForumTopic(forum, name);
+        const c = await createContact({ tenantId, tgId, chatId, threadId: topic.message_thread_id, name, viaBot: true });
+        return { id: c.id, threadId: topic.message_thread_id, isNew: true };
+      };
+
+      const text = m.text;
+      if (text?.startsWith("/")) return; // 客户对 bot 发命令(如 /start)→ 忽略,不建话题
+
+      if (text) {
+        const c = await ensure();
+        if (existing) await touchContact(existing.id);
+        let lang = existing?.lang ?? "unknown";
+        let native = "";
+        try {
+          const r = await translateInbound(text, t.nativeLang);
+          native = r.native;
+          if (lang === "unknown" && r.lang !== "unknown") {
+            lang = r.lang;
+            await setLang(c.id, lang);
+          }
+        } catch (e) {
+          console.error(`[${tenantId}] 门面入站翻译失败,原文落档:`, e);
+          logEvent(tenantId, "translate_fail", (e instanceof Error ? e.message : String(e)).slice(0, 120), t.username || t.name);
+          await ctx.api.sendMessage(forum, tr("relay.translate_fail", t.nativeLang, { text }), { message_thread_id: c.threadId });
+          await logMessage({ contactId: c.id, direction: "in", originalText: text });
+          return;
+        }
+        const head = c.isNew ? `${tr("relay.card_new", t.nativeLang)}\n` : "";
+        await ctx.api.sendMessage(
+          forum,
+          `${head}${tr("relay.card_original", t.nativeLang, { text })}\n🌐 ${native}\n\n${tr("relay.card_footer", t.nativeLang, { lang: resolveLang(lang) })}`,
+          { message_thread_id: c.threadId },
+        );
+        await logMessage({ contactId: c.id, direction: "in", originalText: text, originalLang: lang, nativeText: native });
+        return;
+      }
+
+      // 非文本(图/语音/文件/贴纸等):整条复制进话题,轻量处理不做本地存档
+      const c = await ensure();
+      if (existing) await touchContact(existing.id);
+      try {
+        await ctx.api.sendMessage(forum, tr("relay.media_caption", t.nativeLang, { name }), { message_thread_id: c.threadId });
+        await ctx.api.copyMessage(forum, m.chat.id, m.message_id, { message_thread_id: c.threadId });
+        await logMessage({ contactId: c.id, direction: "in", originalText: "[media]", mediaType: "media" });
+      } catch (e) {
+        console.error(`[${tenantId}] 门面媒体转发失败:`, e);
+      }
+    });
+  }
 
   // ── 入站 ────────────────────────────────────────────────────────────
   bot.on("business_message", (ctx) => {
@@ -463,6 +544,16 @@ export function attachRelay(bot: Bot, tenantId: string, notify?: (text: string) 
 
     const t = await getTenant(tenantId);
 
+    // ── Bot 门面:客户直接私聊租户 bot 即进控制台(免 Premium 路径) ──
+    // 官方门户实例不启用(其私聊是轻量翻译入口);租户本人私聊自己的 bot 不当客户。
+    if (ctx.chat.type === "private") {
+      if (!opts?.botFront || !t) return next();
+      if (String(ctx.from?.id ?? "") === (t.ownerUserId || t.id)) return next();
+      if (!t.forumChatId) return; // 控制台未绑定,无处投递(开通话术已引导先建群)
+      await botFrontInbound(ctx, t);
+      return;
+    }
+
     // ── 跨语言群组:注册过的普通群(非控制台)自动把非目标语消息翻成目标语回帖 ──
     if ((ctx.chat.type === "group" || ctx.chat.type === "supergroup") && !(t?.forumChatId && ctx.chat.id === Number(t.forumChatId))) {
       // /glang <码>|off:开关本群跨语言模式(仅租户本人)
@@ -510,15 +601,17 @@ export function attachRelay(bot: Bot, tenantId: string, notify?: (text: string) 
 
     const conn = t.connId ?? contact.connId; // 租户最新连接优先(owner 重连后旧 id 会失效)
 
-    // 出站文件:在客户 Topic 里发文件/视频/图 → 经 Business 转发给客户 + 存档
+    // 出站文件:在客户 Topic 里发文件/视频/图 → 转发给客户 + 存档
+    // (Bot 门面客户走普通发送;Premium 中继客户经 business 连接以本人名义发)
     const outDoc = ctx.message.document;
     const outVideo = ctx.message.video;
     const outPhoto = ctx.message.photo;
     if (outDoc || outVideo || (outPhoto && outPhoto.length)) {
-      if (!conn) {
+      if (!conn && !contact.viaBot) {
         await ctx.reply(tr("relay.no_conn_file", t.nativeLang), { message_thread_id: threadId });
         return;
       }
+      const sendOpts = contact.viaBot ? {} : { business_connection_id: conn! };
       try {
         let fileId: string;
         let type: string;
@@ -529,20 +622,20 @@ export function attachRelay(bot: Bot, tenantId: string, notify?: (text: string) 
           type = "document";
           fileName = outDoc.file_name ?? `doc_${outDoc.file_unique_id}`;
           size = outDoc.file_size;
-          await ctx.api.sendDocument(Number(contact.chatId), fileId, { business_connection_id: conn });
+          await ctx.api.sendDocument(Number(contact.chatId), fileId, sendOpts);
         } else if (outVideo) {
           fileId = outVideo.file_id;
           type = "video";
           fileName = outVideo.file_name ?? `video_${outVideo.file_unique_id}.mp4`;
           size = outVideo.file_size;
-          await ctx.api.sendVideo(Number(contact.chatId), fileId, { business_connection_id: conn });
+          await ctx.api.sendVideo(Number(contact.chatId), fileId, sendOpts);
         } else {
           const ph = outPhoto![outPhoto!.length - 1]!;
           fileId = ph.file_id;
           type = "photo";
           fileName = `photo_${ph.file_unique_id}.jpg`;
           size = ph.file_size;
-          await ctx.api.sendPhoto(Number(contact.chatId), fileId, { business_connection_id: conn });
+          await ctx.api.sendPhoto(Number(contact.chatId), fileId, sendOpts);
         }
         const localPath = await downloadTgFile(bot.token, fileId, `${tenantId}/${contact.tgId}`, fileName ?? type);
         await createAsset({ contactId: contact.id, direction: "out", type, fileId, fileName, localPath: localPath ?? undefined, size });
@@ -623,7 +716,7 @@ export function attachRelay(bot: Bot, tenantId: string, notify?: (text: string) 
       return;
     }
 
-    if (!conn) {
+    if (!conn && !contact.viaBot) {
       await ctx.reply(tr("relay.no_conn_text", t.nativeLang), {
         message_thread_id: threadId,
       });
@@ -713,12 +806,14 @@ export function attachRelay(bot: Bot, tenantId: string, notify?: (text: string) 
       return;
     }
     const conn = t?.connId ?? p.connId; // 租户最新连接优先(owner 重连后草稿里的旧 id 会失效)
-    if (!conn) {
+    if (!conn && !p.viaBot) {
       await ctx.answerCallbackQuery(tr("relay.cb_no_conn", lang));
       return;
     }
-    const doSend = async (cid: string) => {
-      await ctx.api.sendMessage(Number(p.chatId), p.translated, { business_connection_id: cid });
+    const doSend = async (cid?: string) => {
+      // Bot 门面客户走普通发送;Premium 中继客户经 business 连接以本人名义发
+      if (p.viaBot) await ctx.api.sendMessage(Number(p.chatId), p.translated);
+      else await ctx.api.sendMessage(Number(p.chatId), p.translated, { business_connection_id: cid! });
       await ctx.editMessageText(tr("relay.sent", lang, { lang: p.lang, translated: p.translated }));
       await logMessage({ contactId: p.contactId, direction: "out", originalText: p.translated, originalLang: p.lang, nativeText: p.original });
       await bumpOutbound(tenantId); // 计一条出站(免费额度计量)

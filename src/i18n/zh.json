@@ -121,9 +121,10 @@
   "portal.usage_quota_unlimited": "套餐:不限量(计费未开启)",
   "portal.usage_month": "本月:收 {inMsgs} · 发 {outMsgs} · 新客户 {newContacts}",
   "portal.usage_history": "近几个月计费发送:",
-  "portal.welcome_premium_note": "⚠️ 注意:上面的完整中继跑在 Telegram Business 上,需要 Telegram Premium —— 你的账号还没有开通。没有 Premium 也能立刻用我:直接发我任意文字即翻译;任何聊天里打 @{bot} 文字,点选即以你本人名义发出译文;拉我进群发 /glang 开双向同传。",
-  "portal.premium_needed_notice": "⚠️ 重要:你的 Telegram 账号没有 Premium,而第 1️⃣ 步的「Telegram Business」是 Premium 专属功能 —— 升级 Premium 之前,中继无法完成绑定。\n\n不过免 Premium 的玩法现在就能用:直接发我文字即翻译;任何聊天里打 @{bot} 文字发译文;群里 /glang 双向同传。",
-  "portal.status_conn_need_premium": "❌ 需要 Telegram Premium(你的账号未开通)—— 「设置 → Telegram Business」这个菜单只有 Premium 用户才有。没有 Premium 可用免费玩法:发我文字即翻译、任意聊天 @{bot} 内联、群里 /glang。",
+  "portal.welcome_premium_note": "⚠️ 注意:上面的中继需要 Telegram Premium(你的账号未开通)。不用 Premium 现在就能用的:直接发我文字即翻译 · 任意聊天打 @{bot} 文字 · 群里 /glang · 或者创建你自己的 bot 让客户直接和它聊 —— 完整控制台照用。发 /free 看完整玩法。",
+  "portal.premium_needed_notice": "⚠️ 重要:你的 Telegram 账号没有 Premium,第 1️⃣ 步的「Telegram Business」是 Premium 专属 —— 升级前「隐形中继」无法连接。\n\n💡 但有个好消息:跳过第 1️⃣ 步,只做第 2️⃣ 步(建控制台群 + /bind),然后把你 bot 的链接 t.me/{ownbot} 发给客户 —— 客户消息照样带翻译进你的控制台话题,你的回复照样翻译后发出,和付费流程几乎一样。唯一区别:客户对话的是你的 bot 而不是你的真人号。",
+  "portal.status_conn_need_premium": "⏭️ 已跳过(需 Telegram Premium,你的账号未开通)。没关系:把 t.me/{ownbot} 发给客户,对话照样进控制台(Bot 门面模式)。发 /free 看全部免 Premium 玩法。",
+  "portal.inline_bilingual": "发送原文+译文(双语版)",
   "portal.to_usage": "用法:/to <ISO 639-1 码> —— 你的译文发出时用的语言,如 /to es。内联模式和私聊翻译都用它。",
   "portal.to_set": "✅ 译出语言已设为 {lang}。\n· 直接发我任意文字即可翻译(外语→你的母语,母语→{lang})\n· 在任何聊天里打 @{bot} 文字,点选结果即以你本人名义发出译文",
   "portal.lite_quota_full": "🈵 本月免费额度({quota} 条)已用完。/subscribe 升级 Pro 不限量 —— 无需任何配置,当场生效。",
@@ -135,5 +136,7 @@
   "cmd.usage": "查看本月用量与额度",
   "cmd.native": "设置你的母语",
   "cmd.subscribe": "升级 Pro(不限量)",
-  "cmd.paysupport": "订阅与支付支持"
+  "cmd.paysupport": "订阅与支付支持",
+  "portal.free_guide": "🆓 不用 Telegram Premium 就能用的全部功能:\n\n1️⃣ 私聊翻译 —— 直接发我文字(或转发消息):外语→你的母语,母语→ /to 设置的译出语。点 ↔️ 可翻转方向。\n2️⃣ 任意聊天内联 —— 打 @{bot} 你的话,点选结果即以你本人名义发出译文(或双语版)。技巧:不点选就是免费的「偷看翻译器」。\n3️⃣ 群双向同传 —— 拉我进群发 /glang <码>:各说各的母语。\n4️⃣ Bot 门面控制台 —— 在 @BotFather 创建你自己的 bot(不需要 Premium),把 token 发给我,建控制台群 + /bind,然后把 bot 链接发给客户:话题控制台、模板、AI 拟稿,整套工作台都是你的。\n\n命令:/native <码> 你的母语 · /to <码> 译出语 · /usage 查额度",
+  "cmd.free": "免 Premium 玩法指南"
 }

@@ -53,6 +53,13 @@ function planLine(
 
 const TOKEN_RE = /^\d{5,}:[A-Za-z0-9_-]{30,}$/;
 
+/** HTML 转义(parse_mode: HTML 消息里的用户内容必须转义) */
+const escHtml = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+// 私聊翻译「↔️ 反向」:方向判断错时一键翻转(内存暂存原文,重启失效可接受)
+const flipStore = new Map<number, { text: string; native: string; target: string; cur: "in" | "out" }>();
+let flipSeq = 0;
+
 /** 调 getMe 校验 token,返回 bot 身份(含是否开了 Business Mode)或 null */
 async function validateToken(token: string): Promise<{ id: string; username: string; canBusiness: boolean } | null> {
   try {
@@ -186,6 +193,12 @@ export function attachPortal(bot: Bot): void {
       return;
     }
 
+    // 免 Premium 玩法总览(官网/欢迎语导流入口)
+    if (text === "/free" || text === "/start free") {
+      await ctx.reply(t("portal.free_guide", lang, { bot: ctx.me.username }), { link_preview_options: { is_disabled: true } });
+      return;
+    }
+
     if (text === "/start" || text === "/help") {
       // 非 Premium 用户在欢迎语后追加提示:完整中继需 Premium,免费三件套现在就能用
       const premiumNote = ctx.from.is_premium
@@ -221,7 +234,7 @@ export function attachPortal(bot: Bot): void {
         ? "✅"
         : ctx.from.is_premium
           ? t("portal.status_conn_off", lang)
-          : t("portal.status_conn_need_premium", lang, { bot: ctx.me.username });
+          : t("portal.status_conn_need_premium", lang, { bot: ctx.me.username, ownbot: tn.botUsername });
       // 回复权限在未绑定连接前无意义,显示 —(避免误导性的 ✅)
       const replyVal = tn.connId ? (tn.canReply ? "✅" : t("portal.status_reply_off", lang)) : "—";
       const forumVal = tn.forumChatId ? t("portal.status_forum_ok", lang) : t("portal.status_forum_off", lang);
@@ -385,7 +398,7 @@ export function attachPortal(bot: Bot): void {
       if (!me.canBusiness) logEvent(uid, "secretary_mode_off", `@${me.username}`, ctx.from.username ?? ctx.from.first_name ?? "");
       // 非 Premium 账号:Telegram Business 入口根本不存在,提前说明白 + 指路免费玩法
       if (!ctx.from.is_premium) logEvent(uid, "no_premium_activation", `@${me.username}`, ctx.from.username ?? ctx.from.first_name ?? "");
-      const premiumWarn = ctx.from.is_premium ? "" : t("portal.premium_needed_notice", lang, { bot: ctx.me.username }) + "\n\n";
+      const premiumWarn = ctx.from.is_premium ? "" : t("portal.premium_needed_notice", lang, { bot: ctx.me.username, ownbot: me.username }) + "\n\n";
       const prefix = premiumWarn + (me.canBusiness ? "" : t("portal.business_mode_fix", lang) + "\n\n");
       await ctx.reply(prefix + t("portal.activated", lang, { bot: me.username }), {
         link_preview_options: { is_disabled: true },
@@ -418,13 +431,21 @@ export function attachPortal(bot: Bot): void {
       const r = await translateInbound(text, native);
       let out = r.native;
       let dir = native;
+      let cur: "in" | "out" = "in";
       if (r.lang === native && native !== lu.targetLang) {
         out = await translateOutbound(text, lu.targetLang);
         dir = lu.targetLang;
+        cur = "out";
       }
-      const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-      const hint = firstUse ? `\n\n${esc(t("portal.lite_hint", lang, { lang: lu.targetLang, bot: ctx.me.username }))}` : "";
-      await ctx.reply(`🌐 → ${dir}\n<code>${esc(out)}</code>${hint}`, { parse_mode: "HTML" });
+      const hint = firstUse ? `\n\n${escHtml(t("portal.lite_hint", lang, { lang: lu.targetLang, bot: ctx.me.username }))}` : "";
+      // ↔️ 反向按钮:短句语种判断偶尔会错,一键翻转方向
+      const fToken = ++flipSeq;
+      flipStore.set(fToken, { text, native, target: lu.targetLang, cur });
+      if (flipStore.size > 500) flipStore.delete(flipStore.keys().next().value!);
+      await ctx.reply(`🌐 → ${dir}\n<code>${escHtml(out)}</code>${hint}`, {
+        parse_mode: "HTML",
+        reply_markup: { inline_keyboard: [[{ text: "↔️", callback_data: `flip:${fToken}` }]] },
+      });
       if (tn2) await bumpOutbound(tn2.id);
       else await bumpLite(uid);
     } catch (e) {
@@ -443,9 +464,35 @@ export function attachPortal(bot: Bot): void {
   // 订阅支付:成功(首购 + 每月自动续费都到这里)
   bot.on("message:successful_payment", (ctx) => handleSuccessfulPayment(ctx));
 
+  // ── 私聊翻译「↔️ 反向」回调(共享实例上 relay 的 send/cancel/tpl 会先处理并 next 其余) ──
+  bot.on("callback_query:data", async (ctx, next) => {
+    const [action, arg] = ctx.callbackQuery.data.split(":");
+    if (action !== "flip") return next();
+    const st = flipStore.get(Number(arg));
+    if (!st) {
+      await ctx.answerCallbackQuery("⌛").catch(() => {});
+      return;
+    }
+    try {
+      st.cur = st.cur === "out" ? "in" : "out";
+      const out = st.cur === "out" ? await translateOutbound(st.text, st.target) : (await translateInbound(st.text, st.native)).native;
+      const dir = st.cur === "out" ? st.target : st.native;
+      await ctx
+        .editMessageText(`🌐 → ${dir}\n<code>${escHtml(out)}</code>`, {
+          parse_mode: "HTML",
+          reply_markup: { inline_keyboard: [[{ text: "↔️", callback_data: `flip:${arg}` }]] },
+        })
+        .catch(() => {});
+      await ctx.answerCallbackQuery();
+    } catch (e) {
+      console.error("反向翻译失败:", e);
+      await ctx.answerCallbackQuery("⚠️").catch(() => {});
+    }
+  });
+
   // ── 免 Premium 内联翻译:任意聊天里打 @bot 文字 → 点选即以本人名义发出译文 ──
   // 需在 BotFather 开启 /setinline;计量在 chosen_inline_result(真正发出才扣额度,
-  // 需 /setinlinefeedback 100%)。600ms 防抖:只译用户停顿后的最后一版,免得每敲一键都调 AI。
+  // 需 /setinlinefeedback 100%)。350ms 防抖:只译用户停顿后的最后一版,免得每敲一键都调 AI。
   const inlineTimers = new Map<string, ReturnType<typeof setTimeout>>();
   bot.on("inline_query", async (ctx) => {
     const q = ctx.inlineQuery.query.trim();
@@ -478,6 +525,7 @@ export function attachPortal(bot: Bot): void {
           const outbound = r.lang === native && native !== lu.targetLang;
           const out = outbound ? await translateOutbound(q, lu.targetLang) : r.native;
           const dir = outbound ? lu.targetLang : native;
+          // 两个结果:纯译文 / 双语版(原文+译文,谈生意常用,双方都看得懂)
           await ctx.answerInlineQuery(
             [
               {
@@ -487,6 +535,13 @@ export function attachPortal(bot: Bot): void {
                 description: `🌐 → ${dir}`,
                 input_message_content: { message_text: out },
               },
+              {
+                type: "article",
+                id: "bi",
+                title: `💬 ${q.slice(0, 32)} …`,
+                description: t("portal.inline_bilingual", lang2),
+                input_message_content: { message_text: `${q}\n———\n${out}` },
+              },
             ],
             { cache_time: 30, is_personal: true },
           );
@@ -494,7 +549,7 @@ export function attachPortal(bot: Bot): void {
           console.error("内联翻译失败:", e);
           await ctx.answerInlineQuery([], { cache_time: 0 }).catch(() => {});
         }
-      }, 600),
+      }, 350),
     );
   });
 

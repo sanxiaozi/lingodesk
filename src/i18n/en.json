@@ -121,9 +121,10 @@
   "portal.usage_quota_unlimited": "Plan: unlimited (billing disabled)",
   "portal.usage_month": "This month: received {inMsgs} · sent {outMsgs} · new contacts {newContacts}",
   "portal.usage_history": "Billable sends, last months:",
-  "portal.welcome_premium_note": "⚠️ Note: the full relay (steps above) runs on Telegram Business, which requires Telegram Premium — your account doesn't have it yet. No Premium? You can still use me right now: send me any text to translate it, type @{bot} <text> in any chat to send translations as yourself, or add me to a group and send /glang for two-way interpreting.",
-  "portal.premium_needed_notice": "⚠️ Important: your Telegram account doesn't have Premium, and step 1️⃣ (Telegram Business) is a Premium-only feature — the relay can't connect until you upgrade to Premium.\n\nMeanwhile, everything Premium-free already works: send me text to translate it, type @{bot} <text> in any chat, or /glang in a group.",
-  "portal.status_conn_need_premium": "❌ Requires Telegram Premium (your account doesn't have it) — the \"Telegram Business\" menu only exists for Premium users. Without Premium, use the free tools instead: message me text to translate, @{bot} <text> inline in any chat, /glang in groups.",
+  "portal.welcome_premium_note": "⚠️ Note: the relay above needs Telegram Premium (your account doesn't have it). Premium-free ways that work right now: message me any text to translate it · type @{bot} <text> in any chat · /glang in groups · or create your own bot and let customers chat it directly — full console included. Send /free for the guide.",
+  "portal.premium_needed_notice": "⚠️ Important: your Telegram account doesn't have Premium, and step 1️⃣ (Telegram Business) is Premium-only — the invisible relay can't connect until you upgrade.\n\n💡 But here's the good news: skip step 1️⃣, do only step 2️⃣ (console group + /bind), then just give customers your bot's link t.me/{ownbot} — their messages arrive in your console topics with translations, and your replies go out translated, exactly like the paid flow. The only difference: they chat with your bot instead of your personal account.",
+  "portal.status_conn_need_premium": "⏭️ Skipped (needs Telegram Premium — your account doesn't have it). No problem: share t.me/{ownbot} with customers and their chats arrive in your console anyway (Bot-front mode). /free for all Premium-free options.",
+  "portal.inline_bilingual": "Send original + translation (bilingual)",
   "portal.to_usage": "Usage: /to <ISO 639-1 code> — the language your translations are sent out in, e.g. /to es. Used by inline mode and chat translation.",
   "portal.to_set": "✅ Output language set to {lang}.\n· Message me any text and I'll translate it (foreign → your language, your language → {lang})\n· In any chat, type @{bot} <text> and tap the result to send the translation as yourself",
   "portal.lite_quota_full": "🈵 This month's free quota ({quota} translations) is used up. /subscribe to go Pro for unlimited — no setup needed, works right here.",
@@ -135,5 +136,7 @@
   "cmd.usage": "Your monthly usage & quota",
   "cmd.native": "Set your native language",
   "cmd.subscribe": "Upgrade to Pro (unlimited)",
-  "cmd.paysupport": "Subscription & payment help"
+  "cmd.paysupport": "Subscription & payment help",
+  "portal.free_guide": "🆓 Everything that works without Telegram Premium:\n\n1️⃣ Chat translation — just send me any text (or forward a message): foreign → your language, your language → your /to output language. Tap ↔️ to flip direction.\n2️⃣ Inline anywhere — type @{bot} <your text> in any chat, tap a result to send the translation (or the bilingual version) as yourself. Tip: don't tap = free peek-reader.\n3️⃣ Group interpreting — add me to a group, send /glang <code>: everyone speaks their own language.\n4️⃣ Bot-front console — create your own bot in @BotFather (no Premium needed), send me its token, make a console group + /bind, then give customers your bot's link: full topic console, templates, AI drafts — the whole workbench.\n\nCommands: /native <code> your language · /to <code> output language · /usage quota",
+  "cmd.free": "Premium-free features guide"
 }
