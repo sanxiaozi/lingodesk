@@ -200,11 +200,11 @@ export function attachPortal(bot: Bot): void {
     }
 
     if (text === "/start" || text === "/help") {
-      // 非 Premium 用户在欢迎语后追加提示:完整中继需 Premium,免费三件套现在就能用
-      const premiumNote = ctx.from.is_premium
-        ? ""
-        : "\n\n" + t("portal.welcome_premium_note", lang, { bot: ctx.me.username });
-      await ctx.reply(t("portal.welcome", lang) + premiumNote, { link_preview_options: { is_disabled: true } });
+      // 提前分流:Premium 用户看「隐形中继」开通引导;免费用户直接看免 Premium 玩法(群同传第一)
+      const body = ctx.from.is_premium
+        ? t("portal.welcome", lang)
+        : t("portal.welcome_free", lang, { bot: ctx.me.username });
+      await ctx.reply(body, { link_preview_options: { is_disabled: true } });
       return;
     }
 

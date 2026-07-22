@@ -22,7 +22,7 @@
 
 ## 自托管前置条件
 
-- **Telegram Premium**(Business 回灌是 Premium 专属,两种模式都需要)
+- **Telegram Premium** —— 仅「隐形中继」需要(Telegram Business 是 Premium 专属)。没有 Premium?Bot 门面控制台、群双向同传(`/glang`)、内联翻译、私聊翻译全部可用,私聊门户 bot 发 `/free` 查看。
 - Node.js ≥ 20(或 Docker)
 - `ANTHROPIC_API_KEY`(必填)+ `OPENAI_API_KEY`(可选兜底)
 

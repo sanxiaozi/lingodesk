@@ -23,7 +23,7 @@ Customers message your **personal Telegram account** in any language. LingoDesk 
 
 ## Self-host requirements
 
-- **Telegram Premium** (Telegram Business relay is Premium-only — hard requirement for both modes)
+- **Telegram Premium** — only for the *invisible relay* (Telegram Business is Premium-only). No Premium? The bot-front console, two-way group interpreting (`/glang`), inline translation and chat translation all work without it — message the portal bot and send `/free`.
 - Node.js ≥ 20 (or Docker)
 - An Anthropic API key (plus an optional OpenAI key as fallback)
 

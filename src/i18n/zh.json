@@ -1,5 +1,6 @@
 {
   "portal.welcome": "👋 欢迎使用 LingoDesk —— 在 Telegram 上用母语和全世界聊天。\n\n开通只要三步(详细图文:lingodesk.org/setup/):\n1️⃣ 在 @BotFather 创建你自己的 bot(/newbot),并在 Bot Settings 里开启 Secretary Mode(旧称 Business Mode)、关闭 Group Privacy\n2️⃣ 把拿到的 token(形如 123456:ABC...)直接发给我,我立刻为你开通\n3️⃣ 按回复里的指引绑定 Telegram Business(记得打开「回复消息」权限)、建控制台群发 /bind\n\nSend me your bot token from @BotFather to activate. Full guide: lingodesk.org/setup/\n\n💡 双向都行:对方发来会自动弹话题;你也可以在真人号主动对任何人说句话,TA 就出现在控制台,之后在这里打母语继续聊。\n\n其它命令:/status 查看状态 · /native <语种码> 设置你的母语(默认中文)",
+  "portal.welcome_free": "👋 欢迎使用 LingoDesk —— 在 Telegram 上用母语和全世界聊天。\n\n你的账号没有 Telegram Premium?没关系,下面这些现在就全部免费可用:\n\n🗣 想和某个人开聊(首选方式)\n建个群拉上 TA 和我,发一次 /glang 对方语言码(如 /glang en)—— 之后你们各打各的母语,我实时双向同传。\n\n💬 看懂 / 说出任何语言\n· 直接发我文字(或转发消息)= 秒译,点 ↔️ 可翻转方向\n· 任何聊天里打 @{bot} 你的话,点选即以你本人名义发出译文\n\n🏪 做生意接待客户?\n在 @BotFather 建你自己的 bot(不需要 Premium),把 token 发给我,建控制台群 + /bind —— 客户和你的 bot 聊,你在话题控制台用母语统一回复(模板 + AI 拟稿全套)。\n\n⭐ 开通了 Telegram Premium?升级后再发一次 /start 可解锁「隐形中继」—— 客户私聊你的真人号,全程看不到 bot。图文:lingodesk.org/setup/\n\n命令:/free 玩法总览 · /native <码> 母语 · /to <码> 译出语 · /usage 额度",
   "portal.business_mode_fix": "⚠️ 检测到你的 bot 还没开启 Secretary Mode(旧称 Business Mode)—— 绑定时 Telegram 会提示「此机器人暂不支持 Telegram 企业版」。\n\n修复只要 20 秒,在 @BotFather 里操作(两种界面任选):\n① 经典命令版:/mybots → 选你的 bot → Bot Settings → Secretary Mode → Turn on\n② 新版面板:点 BotFather 输入框旁的蓝色 Open 按钮 → 选你的 bot → Settings → Mode Settings → 打开 Secretary Mode 开关\n\n(新旧客户端名字不同:Secretary Mode = Business Mode,找到任意一个即可;和 Telegram Premium 无关,人人都能开。)开启立即生效,不用重发 token;开完去 设置 → Telegram Business → 自动聊天(Chatbots)重新添加即可。发 /status 可复查。",
   "portal.plan_pro": "套餐:⭐ Pro(无限){until}",
   "portal.plan_pro_until": " · 续费至 {date}",
@@ -137,6 +138,6 @@
   "cmd.native": "设置你的母语",
   "cmd.subscribe": "升级 Pro(不限量)",
   "cmd.paysupport": "订阅与支付支持",
-  "portal.free_guide": "🆓 不用 Telegram Premium 就能用的全部功能:\n\n1️⃣ 私聊翻译 —— 直接发我文字(或转发消息):外语→你的母语,母语→ /to 设置的译出语。点 ↔️ 可翻转方向。\n2️⃣ 任意聊天内联 —— 打 @{bot} 你的话,点选结果即以你本人名义发出译文(或双语版)。技巧:不点选就是免费的「偷看翻译器」。\n3️⃣ 群双向同传 —— 拉我进群发 /glang <码>:各说各的母语。\n4️⃣ Bot 门面控制台 —— 在 @BotFather 创建你自己的 bot(不需要 Premium),把 token 发给我,建控制台群 + /bind,然后把 bot 链接发给客户:话题控制台、模板、AI 拟稿,整套工作台都是你的。\n\n命令:/native <码> 你的母语 · /to <码> 译出语 · /usage 查额度",
+  "portal.free_guide": "🆓 不用 Telegram Premium 就能用的全部功能 —— 按场景:\n\n1️⃣ 想和某个人聊天 → 建群拉上 TA 和我,发 /glang <对方语言码>。之后各说各的母语,我实时双向同传。\n2️⃣ 看不懂一条消息 → 转发给我(或直接发文字):秒译成你的母语,点 ↔️ 翻转方向。\n3️⃣ 想在任意聊天说外语 → 打 @{bot} 你的话,点选结果即以你名义发出(有双语版);不点选就是免费的「偷看翻译器」。\n4️⃣ 做生意接待多客户 → 在 @BotFather 建自己的 bot(不需要 Premium),token 发我,建群 /bind,把 bot 链接给客户:话题控制台+模板+AI 拟稿整套工作台。\n\n设置:/native <码> 你的母语 · /to <码> 译出语 · /usage 查额度\n⭐ 有 Premium?发 /start 解锁隐形中继(客户私聊你的真人号)。",
   "cmd.free": "免 Premium 玩法指南"
 }

@@ -30,11 +30,11 @@ async function setPortalCommands() {
   for (const code of SUPPORTED) {
     const cmds = [
       { command: "start", description: t("cmd.start", code) },
+      { command: "free", description: t("cmd.free", code) },
       { command: "status", description: t("cmd.status", code) },
       { command: "usage", description: t("cmd.usage", code) },
       { command: "native", description: t("cmd.native", code) },
       { command: "to", description: t("cmd.to", code) },
-      { command: "free", description: t("cmd.free", code) },
     ];
     if (config.billingEnabled) {
       cmds.push({ command: "subscribe", description: t("cmd.subscribe", code) });
