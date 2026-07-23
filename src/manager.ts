@@ -15,6 +15,9 @@ const ALLOWED_UPDATES = ["business_connection", "business_message", "message", "
 
 const running = new Map<string, Bot>(); // tenantId -> 实例(含共享门户实例)
 let portalBot: Bot | undefined;
+// 门户实例中继只允许挂载一次(运行中重复 attachRelay 会触发 grammY 的
+// 「处理中注册监听器」保护,当场抛错杀死请求 —— 线上真实炸过)
+let portalRelayAttached: string | undefined;
 let portalTenantId: string | undefined; // 官方 bot 兼任中继的租户
 let portalUsername = ""; // 官方门户 bot @username(升级 Pro 的 deep link 用)
 
@@ -69,7 +72,15 @@ export async function startTenant(t: Tenant): Promise<void> {
 
   if (portalBot && token === config.botToken) {
     // 官方门户 bot 兼任该租户的中继:同一实例挂两套 handler(中继在 portal 之前挂,见 main.ts 顺序)
+    if (portalRelayAttached === t.id) {
+      // 运行中重复启动(重发 token//enable)→ 监听器已在,登记复用即可,绝不重挂
+      running.set(t.id, portalBot);
+      portalTenantId = t.id;
+      console.log(`[${t.id}] ▶️ 门户实例中继已挂载,直接复用`);
+      return;
+    }
     attachRelay(portalBot, t.id, notify);
+    portalRelayAttached = t.id;
     running.set(t.id, portalBot);
     portalTenantId = t.id;
     console.log(`[${t.id}] ▶️ 中继挂载到官方门户实例(@${t.botUsername})`);
@@ -87,6 +98,12 @@ export async function startTenant(t: Tenant): Promise<void> {
       onStart: () => console.log(`[${t.id}] ▶️ 实例已启动 @${t.botUsername}`),
     })
     .catch((e) => handleFatal(t.id, e));
+}
+
+/** 优雅停机:停掉所有实例的轮询,处理完在飞更新再退出(否则部署瞬间的消息会被取走未处理而永久丢失) */
+export async function stopAllGraceful(): Promise<void> {
+  const bots = new Set(running.values());
+  await Promise.allSettled([...bots].map((b) => b.stop()));
 }
 
 export async function stopTenant(tenantId: string): Promise<void> {
