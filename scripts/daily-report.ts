@@ -54,6 +54,10 @@ async function main() {
     prisma.contact.count({ where: { createdAt: { gte: d1, lt: todayCn0 } } }),
     prisma.opsEvent.findMany({ where: { createdAt: { gte: d1, lt: todayCn0 } }, orderBy: { createdAt: "asc" } }),
   ]);
+  const [liteTotal, liteNew] = await Promise.all([
+    prisma.liteUser.count(),
+    prisma.liteUser.count({ where: { createdAt: { gte: d1, lt: todayCn0 } } }),
+  ]);
 
   const active = tenants.filter((t) => t.status === "active");
   const disabled = tenants.filter((t) => t.status !== "active");
@@ -85,6 +89,7 @@ async function main() {
     `👥 租户 ${tenants.length}(活跃 ${active.length}${disabled.length ? ` · 停用 ${disabled.length}` : ""})· 新开通 ${newTenants.length}${newTenants.length ? ":" + newTenants.map(tname).join("、") : ""}`,
     `💬 昨日消息:收 ${yesterday.io.in} · 发 ${yesterday.io.out}(前日 收 ${dayBefore.io.in} / 发 ${dayBefore.io.out})`,
     `🆕 新客户联系人 ${newContacts}`,
+    `🆓 轻量用户(内联/私聊翻译):${liteTotal} 个(昨日新增 ${liteNew})`,
     `⭐ Pro ${pro.length} 个${proExpiring.length ? ` · ⏳ 3天内到期:${proExpiring.map(tname).join("、")}` : ""}`,
   ];
   if (quotaWarn.length)
@@ -107,6 +112,7 @@ async function main() {
     engine_failover: "翻译主引擎熔断,已降级备用",
     engine_recovered: "翻译主引擎恢复",
     no_premium_activation: "无 Premium 却开通了中继(会卡在 Business 绑定,已获免费玩法指引)",
+    onboarding_nudge: "系统自动催办了开通卡点",
   };
   // 同一人同一问题合并计次,保留最后一次 detail
   const probMap = new Map<string, { who: string; label: string; detail: string; n: number }>();
@@ -124,18 +130,20 @@ async function main() {
       lines.push(`   ${p.who} — ${p.label}${p.detail ? `(${p.detail})` : ""}${p.n > 1 ? ` ×${p.n}` : ""}`);
   }
 
-  // ── 新租户开通漏斗:近 7 天开通但没走完设置的,点出卡在哪一步 ──
+  // ── 新租户开通漏斗:近 14 天开通但没走完设置的,点出卡点与卡龄(优先级与自动催办一致:先建群) ──
   const stuck = tenants
-    .filter((t) => t.status === "active" && Date.now() - t.createdAt.getTime() < 7 * 86400_000)
+    .filter((t) => t.status === "active" && Date.now() - t.createdAt.getTime() < 14 * 86400_000)
     .map((t) => {
-      const stage = !t.connId
-        ? "已开通,还没绑定 Telegram Business(Chatbots)"
-        : !t.canReply
-          ? "已绑定,但没开「回复消息」权限(能收不能发)"
-          : !t.forumChatId
-            ? "还没绑定控制台群(建群 + /bind)"
+      const stage = !t.forumChatId
+        ? "还没建控制台群 /bind(两条路径都卡在这)"
+        : !t.connId
+          ? "控制台就绪;未绑 Business —— 无 Premium 可直接走 Bot 门面,其实已可用"
+          : !t.canReply
+            ? "已绑定,但没开「回复消息」权限(能收不能发)"
             : null;
-      return stage ? `   ${tname(t)}(@${t.botUsername})— ${stage}` : null;
+      if (!stage) return null;
+      const days = Math.floor((Date.now() - t.createdAt.getTime()) / 86400_000);
+      return `   ${tname(t)}(@${t.botUsername})— ${stage} · 卡 ${days} 天(已自动催办)`;
     })
     .filter(Boolean) as string[];
   if (stuck.length) lines.push(``, `🧭 <b>新租户卡在设置中</b>:`, ...stuck);
@@ -152,6 +160,7 @@ async function main() {
       停用: disabled.map((t) => ({ bot: t.botUsername, 原因: t.statusNote })),
       昨日用户问题: problems.map((p) => `${p.who}:${p.label}${p.detail ? `(${p.detail})` : ""}${p.n > 1 ? ` ×${p.n}` : ""}`),
       新租户卡在设置中: stuck.map((s) => s.trim()),
+      轻量用户: { 总数: liteTotal, 昨日新增: liteNew },
     };
     const comment = await complete(
       "你是 LingoDesk(Telegram 翻译中继 SaaS)的运营分析师。基于日报数据,用简体中文给创始人 2-3 句最值得注意的观察和行动建议。直接说重点,不要客套、不要重复罗列数据本身。",

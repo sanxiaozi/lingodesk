@@ -30,6 +30,7 @@ import {
   liteUsage,
   isLiteOverQuota,
   bumpLite,
+  onboardingStage,
 } from "./db.js";
 import { translateInbound, translateOutbound } from "./ai/translate.js";
 import { startTenant, stopTenant, isRunning, getRunningCount } from "./manager.js";
@@ -249,6 +250,11 @@ export function attachPortal(bot: Bot): void {
           t("portal.status_native", lang, { lang: tn.nativeLang }),
           planLine(tn, lang),
           t("portal.status_totals", lang, { contacts: u.contacts, inMsgs: u.inMsgs, outMsgs: u.outMsgs }),
+          // 智能下一步:状态清单只讲"现在哪",这行只讲"接下来做什么"(与自动催办同一套话术)
+          (() => {
+            const stage = onboardingStage(tn);
+            return stage ? `\n👉 ${t(`portal.nudge_${stage}`, lang, { ownbot: tn.botUsername })}` : null;
+          })(),
         ]
           .filter(Boolean)
           .join("\n"),

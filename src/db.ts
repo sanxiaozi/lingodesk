@@ -96,6 +96,20 @@ export function currentUsage(t: Tenant): number {
   return t.usageMonth === monthKey() ? t.usageCount : 0;
 }
 
+/** 开通卡点判定:bind=没建控制台群;connect=没绑 Business(或未走 Bot 门面);reply=没开回复权限;null=就绪 */
+export function onboardingStage(t: { forumChatId: string | null; connId: string; canReply: boolean }): "bind" | "connect" | "reply" | null {
+  if (!t.forumChatId) return "bind";
+  if (!t.connId) return "connect";
+  if (!t.canReply) return "reply";
+  return null;
+}
+
+/** 某用户某卡点是否已催办过(OpsEvent 记录,避免重复骚扰) */
+export async function hasNudged(userId: string, stage: string): Promise<boolean> {
+  const r = await prisma.opsEvent.findFirst({ where: { userId, type: "onboarding_nudge", detail: stage } });
+  return r !== null;
+}
+
 /** 运营事件埋点(用户遇到的问题;fire-and-forget,失败静默,绝不影响主流程) */
 export function logEvent(userId: string, type: string, detail = "", username = ""): void {
   prisma.opsEvent.create({ data: { userId, type, detail, username } }).catch(() => {});

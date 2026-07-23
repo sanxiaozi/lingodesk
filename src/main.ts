@@ -10,6 +10,7 @@ import { startAll, archiveStaleTopics, getRunningCount, setPortalUsername } from
 import { expireStalePro } from "./db.js";
 import { t, SUPPORTED } from "./i18n.js";
 import { setEngineNotify } from "./ai/_client.js";
+import { nudgeStuckTenants } from "./nudge.js";
 import type { LanguageCode } from "@grammyjs/types";
 
 const portal = new Bot(config.botToken);
@@ -61,6 +62,12 @@ setInterval(() => {
   expireStalePro()
     .then((n) => n && console.log(`⬇️ ${n} 个到期 Pro 已降级 free`))
     .catch((e) => console.error("Pro 到期降级出错:", e));
+}, 6 * 3_600_000);
+
+// 开通卡点自动催办:启动 1 分钟后跑一次(马上覆盖存量卡住用户),之后每 6 小时
+setTimeout(() => nudgeStuckTenants(portal.api).catch((e) => console.error("催办任务出错:", e)), 60_000);
+setInterval(() => {
+  nudgeStuckTenants(portal.api).catch((e) => console.error("催办任务出错:", e));
 }, 6 * 3_600_000);
 
 void portal.start({
