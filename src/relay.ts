@@ -68,6 +68,7 @@ interface PendingOut {
   translated: string;
   original: string;
   viaBot?: boolean; // Bot 门面客户:确认后走普通发送(无需 business 连接)
+  name?: string; // 联系人展示名(24h 规则救场卡拼 t.me 跳转链接用)
 }
 
 /**
@@ -84,11 +85,11 @@ export function attachRelay(bot: Bot, tenantId: string, notify?: (text: string) 
   let pendingSeq = 0;
 
   /** 统一出站预览:母语文本 → 译客户语 → Topic 里弹预览卡(确认才发)。打字/模板/AI 拟稿共用 */
-  async function startPreview(t: Tenant, contact: { id: number; chatId: string; connId: string | null; lang: string; viaBot?: boolean }, threadId: number, text: string): Promise<void> {
+  async function startPreview(t: Tenant, contact: { id: number; chatId: string; connId: string | null; lang: string; viaBot?: boolean; name?: string }, threadId: number, text: string): Promise<void> {
     const targetLang = resolveLang(contact.lang);
     const translated = await translateOutbound(text, targetLang);
     const token = ++pendingSeq;
-    pendingOut.set(token, { contactId: contact.id, chatId: contact.chatId, connId: contact.connId ?? undefined, lang: targetLang, translated, original: text, viaBot: contact.viaBot ?? false });
+    pendingOut.set(token, { contactId: contact.id, chatId: contact.chatId, connId: contact.connId ?? undefined, lang: targetLang, translated, original: text, viaBot: contact.viaBot ?? false, name: contact.name });
     await bot.api.sendMessage(
       Number(t.forumChatId),
       tr("relay.preview", t.nativeLang, { lang: targetLang, translated, original: text }),
@@ -852,6 +853,35 @@ export function attachRelay(bot: Bot, tenantId: string, notify?: (text: string) 
       }
       logEvent(tenantId, "send_fail", failKind === "unknown" ? em.slice(0, 120) : failKind, t?.username || t?.name || "");
       await ctx.answerCallbackQuery(tip);
+
+      // 24h 规则救场卡:把死胡同变 3 秒备用通道 —— 译文点按即复制 +
+      // 跳转对话按钮(有 @username 时)+ 内联直发按钮(仅官方门户实例;
+      // 内联以本人名义发出,天然不受 Business 24h 规则限制)
+      if (failKind.startsWith("对方超 24h") && t?.forumChatId) {
+        try {
+          const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+          const rows: Array<Array<Record<string, unknown>>> = [];
+          if (p.name?.startsWith("@")) rows.push([{ text: tr("relay.rescue_btn_open", lang), url: `https://t.me/${p.name.slice(1)}` }]);
+          if (!opts?.botFront)
+            rows.push([
+              {
+                text: tr("relay.rescue_btn_inline", lang),
+                switch_inline_query_chosen_chat: { query: p.original.slice(0, 250), allow_user_chats: true },
+              },
+            ]);
+          await ctx.api.sendMessage(
+            Number(t.forumChatId),
+            `${tr("relay.rescue_24h", lang)}\n\n<code>${esc(p.translated)}</code>`,
+            {
+              message_thread_id: ctx.callbackQuery.message?.message_thread_id,
+              parse_mode: "HTML",
+              ...(rows.length ? { reply_markup: { inline_keyboard: rows as never } } : {}),
+            },
+          );
+        } catch (e2) {
+          console.error(`[${tenantId}] 救场卡发送失败:`, e2);
+        }
+      }
     }
   });
 
