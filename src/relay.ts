@@ -15,7 +15,7 @@
 import type { Bot, Context } from "grammy";
 import { config } from "./config.js";
 import { t as tr } from "./i18n.js";
-import { translateInbound, translateOutbound, langName } from "./ai/translate.js";
+import { translateInbound, translateOutbound, langName, normalizeLangCode } from "./ai/translate.js";
 import { complete } from "./ai/_client.js";
 import { downloadTgFile } from "./storage.js";
 import {
@@ -564,7 +564,7 @@ export function attachRelay(bot: Bot, tenantId: string, notify?: (text: string) 
           await ctx.reply(tr("relay.glang_owner_only", t.nativeLang));
           return;
         }
-        const garg = rawText.replace(/^\/glang(@\S+)?\s*/, "").trim().toLowerCase();
+        const garg = normalizeLangCode(rawText.replace(/^\/glang(@\S+)?\s*/, "").trim().toLowerCase());
         if (garg === "off") {
           await upsertGroupChat(tenantId, String(ctx.chat.id), { enabled: false });
           await ctx.reply(tr("relay.glang_off", t.nativeLang));
@@ -657,7 +657,7 @@ export function attachRelay(bot: Bot, tenantId: string, notify?: (text: string) 
     if (text.startsWith("/")) {
       const [cmd, arg] = text.trim().split(/\s+/);
       if (cmd === "/lang") {
-        const code = (arg ?? "").toLowerCase();
+        const code = normalizeLangCode((arg ?? "").toLowerCase());
         if (!/^[a-z]{2,3}$/.test(code)) {
           await ctx.reply(tr("relay.lang_usage", t.nativeLang), { message_thread_id: threadId });
           return;
@@ -740,7 +740,7 @@ export function attachRelay(bot: Bot, tenantId: string, notify?: (text: string) 
     if (!t) return;
     const chatId = String(ctx.chat.id);
     if (text.startsWith("/glang")) {
-      const garg = text.replace(/^\/glang(@\S+)?\s*/, "").trim().toLowerCase();
+      const garg = normalizeLangCode(text.replace(/^\/glang(@\S+)?\s*/, "").trim().toLowerCase());
       if (garg === "off") {
         await upsertGroupChat(tenantId, chatId, { enabled: false });
         await ctx.reply(tr("relay.glang_off", t.nativeLang)).catch(() => {});

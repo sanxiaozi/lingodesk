@@ -27,6 +27,25 @@ const LANG_NAMES: Record<string, string> = {
 
 export const langName = (code: string): string => LANG_NAMES[code] ?? `the language with ISO 639-1 code "${code}"`;
 
+/**
+ * 常见「国家码当语言码」误用自动纠正(用户高频打 vn/jp/kr…)。
+ * 只收录本身不是任何 ISO 639-1 语言码的国家码——my(缅甸语)/tw(契维语)/br(布列塔尼语)等撞码的不能进表。
+ */
+const COUNTRY_TO_LANG: Record<string, string> = {
+  vn: "vi", // 越南
+  jp: "ja", // 日本
+  kr: "ko", // 韩国
+  cn: "zh", // 中国
+  gr: "el", // 希腊
+  cz: "cs", // 捷克
+  dk: "da", // 丹麦
+  ua: "uk", // 乌克兰
+  il: "he", // 以色列
+  ir: "fa", // 伊朗
+};
+
+export const normalizeLangCode = (code: string): string => COUNTRY_TO_LANG[code] ?? code;
+
 /** 入站:翻译成租户母语 + 识别原文语种 */
 export async function translateInbound(text: string, nativeLang: string): Promise<{ lang: string; native: string }> {
   const system =

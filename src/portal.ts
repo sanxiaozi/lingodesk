@@ -32,7 +32,7 @@ import {
   bumpLite,
   onboardingStage,
 } from "./db.js";
-import { translateInbound, translateOutbound } from "./ai/translate.js";
+import { translateInbound, translateOutbound, normalizeLangCode } from "./ai/translate.js";
 import { startTenant, stopTenant, isRunning, getRunningCount } from "./manager.js";
 import { sendProInvoice, handleSuccessfulPayment, paySupportText } from "./billing.js";
 
@@ -318,7 +318,7 @@ export function attachPortal(bot: Bot): void {
     }
 
     if (text.startsWith("/native")) {
-      const code = (text.split(/\s+/)[1] ?? "").toLowerCase();
+      const code = normalizeLangCode((text.split(/\s+/)[1] ?? "").toLowerCase());
       if (!/^[a-z]{2,3}$/.test(code)) {
         await ctx.reply(t("portal.native_usage", lang));
         return;
@@ -337,7 +337,7 @@ export function attachPortal(bot: Bot): void {
 
     // /to <码>:内联/私聊翻译的译出目标语(免 Premium 玩法)
     if (text.startsWith("/to")) {
-      const code = (text.split(/\s+/)[1] ?? "").toLowerCase();
+      const code = normalizeLangCode((text.split(/\s+/)[1] ?? "").toLowerCase());
       if (!/^[a-z]{2,3}$/.test(code)) {
         await ctx.reply(t("portal.to_usage", lang));
         return;
