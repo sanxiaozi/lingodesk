@@ -205,7 +205,11 @@ export function attachPortal(bot: Bot): void {
       const body = ctx.from.is_premium
         ? t("portal.welcome", lang)
         : t("portal.welcome_free", lang, { bot: ctx.me.username });
-      await ctx.reply(body, { link_preview_options: { is_disabled: true } });
+      await ctx.reply(body, {
+        link_preview_options: { is_disabled: true },
+        // 完全小白不知道 BotFather 是什么 —— 给一键手把手指南
+        reply_markup: { inline_keyboard: [[{ text: t("portal.bf_btn", lang), callback_data: "bfguide:0" }]] },
+      });
       return;
     }
 
@@ -473,6 +477,20 @@ export function attachPortal(bot: Bot): void {
   // ── 私聊翻译「↔️ 反向」回调(共享实例上 relay 的 send/cancel/tpl 会先处理并 next 其余) ──
   bot.on("callback_query:data", async (ctx, next) => {
     const [action, arg] = ctx.callbackQuery.data.split(":");
+    if (action === "bfguide") {
+      const lang = (await getTenant(String(ctx.from.id)))?.nativeLang || resolveUiLang(ctx.from.language_code);
+      await ctx.answerCallbackQuery().catch(() => {});
+      await ctx.reply(t("portal.bf_guide", lang), {
+        link_preview_options: { is_disabled: true },
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: t("portal.bf_open", lang), url: "https://t.me/BotFather" }],
+            [{ text: t("portal.bf_tutorial", lang), url: "https://lingodesk.org/setup/" }],
+          ],
+        },
+      }).catch(() => {});
+      return;
+    }
     if (action !== "flip") return next();
     const st = flipStore.get(Number(arg));
     if (!st) {
