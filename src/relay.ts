@@ -42,6 +42,8 @@ import {
   getGroupChat,
   upsertGroupChat,
   recentMessages,
+  getContactById,
+  getRecentContacts,
 } from "./db.js";
 import { getPortalUsername } from "./manager.js";
 
@@ -83,6 +85,9 @@ export function attachRelay(bot: Bot, tenantId: string, notify?: (text: string) 
   // 出站待确认译文(预览 → 确认后才发客户),内存存储,重启失效
   const pendingOut = new Map<number, PendingOut>();
   let pendingSeq = 0;
+  // 「全部」视图误发的待路由文本(弹客户选择器,点选后转入对应话题预览)
+  const generalStore = new Map<number, string>();
+  let generalSeq = 0;
 
   /** 统一出站预览:母语文本 → 译客户语 → Topic 里弹预览卡(确认才发)。打字/模板/AI 拟稿共用 */
   async function startPreview(t: Tenant, contact: { id: number; chatId: string; connId: string | null; lang: string; viaBot?: boolean; name?: string }, threadId: number, text: string): Promise<void> {
@@ -595,10 +600,30 @@ export function attachRelay(bot: Bot, tenantId: string, notify?: (text: string) 
 
     if (!t?.forumChatId || ctx.chat.id !== Number(t.forumChatId)) return next();
     const threadId = ctx.message.message_thread_id;
-    if (threadId === undefined) return;
+    if (threadId === undefined) {
+      // 「全部」视图/General 里打的字不属于任何客户话题,以前静默丢弃 —— 用户以为发出去了。
+      // 现在弹最近客户选择器,点谁就把这段话转入谁的常规翻译预览流程。
+      const stray = ctx.message.text;
+      if (!stray || stray.startsWith("/")) return;
+      const recent = await getRecentContacts(tenantId);
+      if (!recent.length) {
+        await ctx.reply(tr("relay.general_no_contacts", t.nativeLang)).catch(() => {});
+        return;
+      }
+      const gToken = ++generalSeq;
+      generalStore.set(gToken, stray);
+      if (generalStore.size > 200) generalStore.delete(generalStore.keys().next().value!);
+      const rows = recent.map((c) => [{ text: c.name, callback_data: `gpick:${gToken}:${c.id}` }]);
+      rows.push([{ text: tr("relay.btn_cancel", t.nativeLang), callback_data: `gdrop:${gToken}` }]);
+      await ctx.reply(tr("relay.general_pick", t.nativeLang), {
+        reply_parameters: { message_id: ctx.message.message_id },
+        reply_markup: { inline_keyboard: rows },
+      }).catch(() => {});
+      return;
+    }
 
     const contact = await getContactByThread(tenantId, threadId);
-    if (!contact) return; // 非客户 Topic(General 等),不响应
+    if (!contact) return; // 非客户 Topic,不响应
 
     const conn = t.connId ?? contact.connId; // 租户最新连接优先(owner 重连后旧 id 会失效)
 
@@ -760,7 +785,35 @@ export function attachRelay(bot: Bot, tenantId: string, notify?: (text: string) 
 
   // ── 按钮回调:出站确认 / 模板选发 ────────────────────────────────────
   bot.on("callback_query:data", async (ctx, next) => {
-    const [action, arg] = ctx.callbackQuery.data.split(":");
+    const [action, arg, arg2] = ctx.callbackQuery.data.split(":");
+
+    // 「全部」视图误发 → 客户选择器:点选转入对应话题的常规翻译预览
+    if (action === "gpick" || action === "gdrop") {
+      const t = await getTenant(tenantId);
+      if (!t) return void (await ctx.answerCallbackQuery().catch(() => {}));
+      const gToken = Number(arg);
+      const stray = generalStore.get(gToken);
+      if (action === "gdrop") {
+        generalStore.delete(gToken);
+        await ctx.editMessageText(tr("relay.general_dropped", t.nativeLang)).catch(() => {});
+        await ctx.answerCallbackQuery().catch(() => {});
+        return;
+      }
+      if (!stray) {
+        await ctx.answerCallbackQuery(tr("relay.preview_expired", t.nativeLang)).catch(() => {});
+        return;
+      }
+      const contact = await getContactById(Number(arg2));
+      if (!contact || contact.tenantId !== tenantId || contact.threadId == null) {
+        await ctx.answerCallbackQuery().catch(() => {});
+        return;
+      }
+      generalStore.delete(gToken);
+      await ctx.answerCallbackQuery().catch(() => {});
+      await ctx.editMessageText(tr("relay.general_routed", t.nativeLang, { name: contact.name })).catch(() => {});
+      await startPreview(t, contact, contact.threadId, stray);
+      return;
+    }
 
     // 模板按钮:模板文案 → 常规翻译预览流程(与打字完全一致,确认才发)
     if (action === "tpl") {

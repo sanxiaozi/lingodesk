@@ -283,6 +283,20 @@ export function getContactByThread(tenantId: string, threadId: number) {
   return prisma.contact.findUnique({ where: { tenantId_threadId: { tenantId, threadId } } });
 }
 
+/** 按 id 取联系人(General 误发选择器回调用) */
+export function getContactById(id: number) {
+  return prisma.contact.findUnique({ where: { id } });
+}
+
+/** 最近活跃的客户(有话题、未归档)—— 在「全部」视图误发时列出候选 */
+export function getRecentContacts(tenantId: string, take = 8) {
+  return prisma.contact.findMany({
+    where: { tenantId, threadId: { not: null }, archived: false },
+    orderBy: { lastActiveAt: "desc" },
+    take,
+  });
+}
+
 /** 新建联系人 */
 export function createContact(data: {
   tenantId: string;
