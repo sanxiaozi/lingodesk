@@ -89,17 +89,18 @@ export function attachRelay(bot: Bot, tenantId: string, notify?: (text: string) 
   const generalStore = new Map<number, string>();
   let generalSeq = 0;
 
-  /** 统一出站预览:母语文本 → 译客户语 → Topic 里弹预览卡(确认才发)。打字/模板/AI 拟稿共用 */
-  async function startPreview(t: Tenant, contact: { id: number; chatId: string; connId: string | null; lang: string; viaBot?: boolean; name?: string }, threadId: number, text: string): Promise<void> {
+  /** 统一出站预览:母语文本 → 译客户语 → 弹预览卡(确认才发)。打字/模板/AI 拟稿/私聊控制台共用。
+   *  dest = 预览卡投递位置:控制台话题(chat=论坛群+thread)或无群模式的租户私聊(chat=owner)。 */
+  async function startPreview(t: Tenant, contact: { id: number; chatId: string; connId: string | null; lang: string; viaBot?: boolean; name?: string }, dest: { chat: number; thread?: number }, text: string): Promise<void> {
     const targetLang = resolveLang(contact.lang);
     const translated = await translateOutbound(text, targetLang);
     const token = ++pendingSeq;
     pendingOut.set(token, { contactId: contact.id, chatId: contact.chatId, connId: contact.connId ?? undefined, lang: targetLang, translated, original: text, viaBot: contact.viaBot ?? false, name: contact.name });
     await bot.api.sendMessage(
-      Number(t.forumChatId),
+      dest.chat,
       tr("relay.preview", t.nativeLang, { lang: targetLang, translated, original: text }),
       {
-        message_thread_id: threadId,
+        message_thread_id: dest.thread,
         reply_markup: {
           inline_keyboard: [
             [
@@ -251,6 +252,16 @@ export function attachRelay(bot: Bot, tenantId: string, notify?: (text: string) 
     // 其它群/频道(或控制台已有)→ 首次进入时给跨语言模式指引
     if (chat.type === "group" || chat.type === "supergroup" || chat.type === "channel") {
       if (t.forumChatId && String(chat.id) === t.forumChatId) return next();
+      // 新租户想建控制台却把 bot 拉进了没开话题的普通群 → 给「开启话题」一步指引,
+      // 而不是答非所问的群同传指引(真实用户 Алишер 级别的卡点)
+      if (chat.type !== "channel" && !t.forumChatId && String(mc.from.id) === (t.ownerUserId || t.id)) {
+        try {
+          await ctx.api.sendMessage(chat.id, tr("relay.group_need_topics", t.nativeLang));
+        } catch {
+          /* 无发言权限等,静默 */
+        }
+        return;
+      }
       const g = await getGroupChat(tenantId, String(chat.id));
       if (!g) {
         try {
@@ -339,6 +350,72 @@ export function attachRelay(bot: Bot, tenantId: string, notify?: (text: string) 
     });
   }
 
+  /**
+   * 无群模式(私聊控制台):没绑控制台群时,客户消息直接投递到「租户与本 bot 的私聊」,不再丢弃。
+   * 卡片脚注带 #c<id> 路由标记,租户对卡片「回复」打母语即进预览流程(确认才发)。
+   * 不做话题/归档/开场白 —— 群控制台是客户多了之后的进阶形态。
+   */
+  async function privateConsoleInbound(api: Bot["api"], t: Tenant, m: NonNullable<Context["message"]>, viaBot: boolean, msgConn?: string): Promise<void> {
+    if (!m.from) return;
+    const owner = Number(t.ownerUserId || t.id);
+    const tgId = String(m.from.id);
+    const name = displayName(m.from);
+    let contact = await getContact(tenantId, tgId);
+    const isNew = !contact;
+    if (!contact) contact = await createContact({ tenantId, tgId, chatId: String(m.chat.id), name, viaBot, connId: msgConn });
+    else await touchContact(contact.id, msgConn);
+
+    const deliver = async (body: string, copy?: boolean) => {
+      try {
+        await api.sendMessage(owner, body);
+        if (copy) await api.copyMessage(owner, m.chat.id, m.message_id);
+      } catch (e) {
+        // owner 从未 /start 过自己的 bot → bot 无法主动私聊;经门户提醒
+        console.warn(`[${tenantId}] 私聊控制台投递失败(owner 未 /start 过自己的 bot?):`, e);
+        await notify?.(tr("relay.pc_need_start", t.nativeLang, { bot: t.username || t.name || "bot" })).catch(() => {});
+      }
+    };
+    const head = `${isNew ? tr("relay.card_new", t.nativeLang) + "\n" : ""}👤 ${name}`;
+    const text = m.text;
+    if (text?.startsWith("/")) return; // 客户对 bot 发命令(如 /start)→ 忽略
+    if (text) {
+      try {
+        const r = await translateInbound(text, t.nativeLang);
+        if (contact.lang === "unknown" && r.lang !== "unknown") await setLang(contact.id, r.lang);
+        const shownLang = resolveLang(contact.lang === "unknown" ? r.lang : contact.lang);
+        await deliver(`${head}(${shownLang})\n${tr("relay.card_original", t.nativeLang, { text })}\n🌐 ${r.native}\n\n${tr("relay.pc_footer", t.nativeLang, { id: String(contact.id) })}`);
+        await logMessage({ contactId: contact.id, direction: "in", originalText: text, originalLang: r.lang, nativeText: r.native });
+      } catch (e) {
+        console.error(`[${tenantId}] 私聊控制台翻译失败,原文落档:`, e);
+        logEvent(tenantId, "translate_fail", (e instanceof Error ? e.message : String(e)).slice(0, 120), t.username || t.name);
+        await deliver(`${head}\n${tr("relay.translate_fail", t.nativeLang, { text })}\n\n${tr("relay.pc_footer", t.nativeLang, { id: String(contact.id) })}`);
+        await logMessage({ contactId: contact.id, direction: "in", originalText: text });
+      }
+      return;
+    }
+    // 非文本(图/语音/文件/贴纸等):标头 + 整条复制
+    await deliver(tr("relay.pc_media", t.nativeLang, { name, id: String(contact.id) }), true);
+    await logMessage({ contactId: contact.id, direction: "in", originalText: "[media]", mediaType: "media" });
+  }
+
+  /** 最近客户选择器:General 误发 / 私聊控制台直接打字共用(点选后转入该客户的预览流程) */
+  async function sendContactPicker(ctx: { message?: { message_id: number }; reply: Context["reply"] }, t: Tenant, stray: string, leadKey: string, noContactsKey: string): Promise<void> {
+    const recent = await getRecentContacts(tenantId);
+    if (!recent.length) {
+      await ctx.reply(tr(noContactsKey, t.nativeLang)).catch(() => {});
+      return;
+    }
+    const gToken = ++generalSeq;
+    generalStore.set(gToken, stray);
+    if (generalStore.size > 200) generalStore.delete(generalStore.keys().next().value!);
+    const rows = recent.map((c) => [{ text: c.name, callback_data: `gpick:${gToken}:${c.id}` }]);
+    rows.push([{ text: tr("relay.btn_cancel", t.nativeLang), callback_data: `gdrop:${gToken}` }]);
+    await ctx.reply(tr(leadKey, t.nativeLang), {
+      ...(ctx.message ? { reply_parameters: { message_id: ctx.message.message_id } } : {}),
+      reply_markup: { inline_keyboard: rows },
+    }).catch(() => {});
+  }
+
   // ── 入站 ────────────────────────────────────────────────────────────
   bot.on("business_message", (ctx) => {
     const m = ctx.businessMessage;
@@ -351,7 +428,15 @@ export function attachRelay(bot: Bot, tenantId: string, notify?: (text: string) 
         await setTenantConn(tenantId, msgConn).catch(() => {});
       }
       if (!t.forumChatId) {
-        console.warn(`[${tenantId}] ⚠️ 收到客户消息但控制台群还没绑定(/bind)。`);
+        // 无群模式:投到租户与本 bot 的私聊(不再丢弃)
+        const fromId0 = m.from?.id;
+        if (fromId0 !== undefined && String(fromId0) === (t.ownerUserId || t.id)) {
+          // owner 在真人号手动回复:仅落档
+          const peer = await getContact(tenantId, String(m.chat.id));
+          if (peer && m.text) await logMessage({ contactId: peer.id, direction: "manual", originalText: m.text });
+          return;
+        }
+        await privateConsoleInbound(ctx.api, t, m, false, msgConn);
         return;
       }
       const forum = Number(t.forumChatId);
@@ -554,8 +639,34 @@ export function attachRelay(bot: Bot, tenantId: string, notify?: (text: string) 
     // 官方门户实例不启用(其私聊是轻量翻译入口);租户本人私聊自己的 bot 不当客户。
     if (ctx.chat.type === "private") {
       if (!opts?.botFront || !t) return next();
-      if (String(ctx.from?.id ?? "") === (t.ownerUserId || t.id)) return next();
-      if (!t.forumChatId) return; // 控制台未绑定,无处投递(开通话术已引导先建群)
+      if (String(ctx.from?.id ?? "") === (t.ownerUserId || t.id)) {
+        // 租户本人私聊自己的 bot:无群模式的控制台
+        const txt = ctx.message.text;
+        if (txt && !txt.startsWith("/")) {
+          // ① 对客户卡片「回复」→ 按 #c 标记路由到该客户的翻译预览
+          const rep = ctx.message.reply_to_message;
+          const repText = (rep && "text" in rep ? rep.text : undefined) ?? (rep && "caption" in rep ? rep.caption : undefined);
+          const mTag = repText?.match(/#c(\d+)/);
+          if (mTag) {
+            const c = await getContactById(Number(mTag[1]));
+            if (c && c.tenantId === tenantId) {
+              await startPreview(t, c, { chat: ctx.chat.id }, txt);
+              return;
+            }
+          }
+          // ② 无群模式下直接打字 → 最近客户选择器
+          if (!t.forumChatId) {
+            await sendContactPicker(ctx, t, txt, "relay.pc_pick", "relay.pc_no_contacts");
+            return;
+          }
+        }
+        return next();
+      }
+      if (!t.forumChatId) {
+        // 无群模式:客户消息进租户私聊控制台
+        await privateConsoleInbound(ctx.api, t, ctx.message, true);
+        return;
+      }
       await botFrontInbound(ctx, t);
       return;
     }
@@ -605,20 +716,7 @@ export function attachRelay(bot: Bot, tenantId: string, notify?: (text: string) 
       // 现在弹最近客户选择器,点谁就把这段话转入谁的常规翻译预览流程。
       const stray = ctx.message.text;
       if (!stray || stray.startsWith("/")) return;
-      const recent = await getRecentContacts(tenantId);
-      if (!recent.length) {
-        await ctx.reply(tr("relay.general_no_contacts", t.nativeLang)).catch(() => {});
-        return;
-      }
-      const gToken = ++generalSeq;
-      generalStore.set(gToken, stray);
-      if (generalStore.size > 200) generalStore.delete(generalStore.keys().next().value!);
-      const rows = recent.map((c) => [{ text: c.name, callback_data: `gpick:${gToken}:${c.id}` }]);
-      rows.push([{ text: tr("relay.btn_cancel", t.nativeLang), callback_data: `gdrop:${gToken}` }]);
-      await ctx.reply(tr("relay.general_pick", t.nativeLang), {
-        reply_parameters: { message_id: ctx.message.message_id },
-        reply_markup: { inline_keyboard: rows },
-      }).catch(() => {});
+      await sendContactPicker(ctx, t, stray, "relay.general_pick", "relay.general_no_contacts");
       return;
     }
 
@@ -729,7 +827,7 @@ export function attachRelay(bot: Bot, tenantId: string, notify?: (text: string) 
             500,
           );
           if (!draft) throw new Error("empty draft");
-          await startPreview(t, contact, threadId, draft);
+          await startPreview(t, contact, { chat: Number(t.forumChatId), thread: threadId }, draft);
         } catch (e) {
           console.error(`[${tenantId}] 拟稿失败:`, e);
           await ctx.reply(tr("relay.draft_fail", t.nativeLang), { message_thread_id: threadId });
@@ -753,7 +851,7 @@ export function attachRelay(bot: Bot, tenantId: string, notify?: (text: string) 
     cancelGreeting(contact.tgId);
 
     // 翻译后先在 Topic 预览,确认才发客户(杜绝误发)
-    await startPreview(t, contact, threadId, text);
+    await startPreview(t, contact, { chat: Number(t.forumChatId), thread: threadId }, text);
   });
 
   // ── 跨语言频道:发帖后自动跟发译文;频道内发 /glang 配置(能发帖即视为管理员) ──
@@ -804,14 +902,18 @@ export function attachRelay(bot: Bot, tenantId: string, notify?: (text: string) 
         return;
       }
       const contact = await getContactById(Number(arg2));
-      if (!contact || contact.tenantId !== tenantId || contact.threadId == null) {
+      if (!contact || contact.tenantId !== tenantId) {
         await ctx.answerCallbackQuery().catch(() => {});
         return;
       }
       generalStore.delete(gToken);
       await ctx.answerCallbackQuery().catch(() => {});
       await ctx.editMessageText(tr("relay.general_routed", t.nativeLang, { name: contact.name })).catch(() => {});
-      await startPreview(t, contact, contact.threadId, stray);
+      // 有话题 → 进话题预览;无群模式 → 预览发在租户与 bot 的私聊里
+      const gDest = contact.threadId != null && t.forumChatId
+        ? { chat: Number(t.forumChatId), thread: contact.threadId }
+        : { chat: Number(t.ownerUserId || t.id) };
+      await startPreview(t, contact, gDest, stray);
       return;
     }
 
@@ -828,7 +930,7 @@ export function attachRelay(bot: Bot, tenantId: string, notify?: (text: string) 
       const contact = await getContactByThread(tenantId, threadId);
       if (!contact) return void (await ctx.answerCallbackQuery());
       await ctx.answerCallbackQuery();
-      await startPreview(t, contact, threadId, tp.text);
+      await startPreview(t, contact, { chat: Number(t.forumChatId), thread: threadId }, tp.text);
       return;
     }
 
@@ -853,7 +955,8 @@ export function attachRelay(bot: Bot, tenantId: string, notify?: (text: string) 
       const url = `https://t.me/${getPortalUsername()}?start=subscribe`;
       await ctx.answerCallbackQuery({ text: tr("relay.cb_quota", lang), show_alert: true });
       await ctx.api.sendMessage(
-        Number(t.forumChatId),
+        // 发到预览卡所在的聊天(群控制台或无群模式的私聊),不依赖 forumChatId
+        ctx.callbackQuery.message?.chat.id ?? Number(t.forumChatId),
         tr("relay.quota_full", lang, { quota: config.freeQuota, price: config.priceStars }),
         { message_thread_id: thread, reply_markup: { inline_keyboard: [[{ text: tr("relay.btn_upgrade", lang), url }]] } },
       );
@@ -910,7 +1013,7 @@ export function attachRelay(bot: Bot, tenantId: string, notify?: (text: string) 
       // 24h 规则救场卡:把死胡同变 3 秒备用通道 —— 译文点按即复制 +
       // 跳转对话按钮(有 @username 时)+ 内联直发按钮(仅官方门户实例;
       // 内联以本人名义发出,天然不受 Business 24h 规则限制)
-      if (failKind.startsWith("对方超 24h") && t?.forumChatId) {
+      if (failKind.startsWith("对方超 24h") && t && ctx.callbackQuery.message) {
         try {
           const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
           const rows: Array<Array<Record<string, unknown>>> = [];
@@ -923,7 +1026,7 @@ export function attachRelay(bot: Bot, tenantId: string, notify?: (text: string) 
               },
             ]);
           await ctx.api.sendMessage(
-            Number(t.forumChatId),
+            ctx.callbackQuery.message!.chat.id,
             `${tr("relay.rescue_24h", lang)}\n\n<code>${esc(p.translated)}</code>`,
             {
               message_thread_id: ctx.callbackQuery.message?.message_thread_id,

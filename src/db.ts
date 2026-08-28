@@ -97,8 +97,8 @@ export function currentUsage(t: Tenant): number {
 }
 
 /** 开通卡点判定:bind=没建控制台群;connect=没绑 Business(或未走 Bot 门面);reply=没开回复权限;null=就绪 */
-export function onboardingStage(t: { forumChatId: string | null; connId: string; canReply: boolean }): "bind" | "connect" | "reply" | null {
-  if (!t.forumChatId) return "bind";
+export function onboardingStage(t: { forumChatId: string | null; connId: string; canReply: boolean }): "connect" | "reply" | null {
+  // 无群模式上线后,没建控制台群不再是卡点(客户消息直接进租户与 bot 的私聊)
   if (!t.connId) return "connect";
   if (!t.canReply) return "reply";
   return null;
@@ -288,10 +288,10 @@ export function getContactById(id: number) {
   return prisma.contact.findUnique({ where: { id } });
 }
 
-/** 最近活跃的客户(有话题、未归档)—— 在「全部」视图误发时列出候选 */
+/** 最近活跃的客户(未归档)—— 「全部」视图误发 / 私聊控制台直接打字时列出候选 */
 export function getRecentContacts(tenantId: string, take = 8) {
   return prisma.contact.findMany({
-    where: { tenantId, threadId: { not: null }, archived: false },
+    where: { tenantId, archived: false },
     orderBy: { lastActiveAt: "desc" },
     take,
   });
@@ -302,7 +302,7 @@ export function createContact(data: {
   tenantId: string;
   tgId: string;
   chatId: string;
-  threadId: number;
+  threadId?: number; // 无群模式(私聊控制台)下没有话题
   name: string;
   connId?: string;
   viaBot?: boolean;

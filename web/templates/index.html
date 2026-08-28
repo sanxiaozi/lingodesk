@@ -120,6 +120,12 @@
   .way li::before { content: "✓"; position: absolute; left: 2px; color: var(--accent-2); font-weight: 700; }
   .way .btn { width: 100%; }
 
+  /* 付费/非付费提前分流:两种形态体验完全不同,进站 10 秒先选对路径 */
+  .fork { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; align-items: stretch; }
+  @media (max-width: 860px) { .fork { grid-template-columns: 1fr; } }
+  .fork .way { display: flex; flex-direction: column; }
+  .fork .way p { font-size: 14px; color: #c8cede; line-height: 1.7; margin-bottom: 22px; flex: 1; }
+
   /* 实战案例:CSS 还原产品真实界面(截图区)+ 真实数据带 */
   .cases { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; align-items: stretch; }
   .case { padding: 0; overflow: hidden; display: flex; flex-direction: column; }
@@ -213,6 +219,23 @@
         </div>
       </div>
       <div class="chip glass">El paquete A cuesta $100… · <b>{{index.mock_sentas}} ✓✓</b></div>
+    </div>
+  </section>
+
+  <section>
+    <h2 class="title reveal">{{index.fork_h}}</h2>
+    <p class="lead reveal">{{index.fork_lead}}</p>
+    <div class="fork">
+      <div class="way glass reveal">
+        <h3>{{index.fork_free_h}}</h3>
+        <p>{{index.fork_free_p}}</p>
+        <a class="btn" href="https://t.me/LingoDeskbot">{{index.fork_free_cta}}</a>
+      </div>
+      <div class="way glass reveal">
+        <h3>{{index.fork_prem_h}}</h3>
+        <p>{{index.fork_prem_p}}</p>
+        <a class="btn ghost" href="{{base}}/setup/">{{index.fork_prem_cta}}</a>
+      </div>
     </div>
   </section>
 

@@ -43,7 +43,7 @@ npm run db:push        # initialize SQLite (first run only)
 npm run start          # or: npm run dev (hot reload)
 ```
 
-5. DM your own bot its token (the same one from `.env`) — possessing the token proves ownership, so it registers you as the first tenant instantly. Then send `/bind` in your console group. Group ID and user ID are detected automatically — nothing to look up.
+5. DM your own bot its token (the same one from `.env`) — possessing the token proves ownership, so it registers you as the first tenant instantly. The console group is optional: without one, customer messages appear right in your private chat with the bot (just Reply to a card to answer); once you have many customers, create a topics group and send `/bind` for a multi-thread console. Group ID and user ID are detected automatically — nothing to look up.
 
 Stuck anywhere? The [illustrated guide](https://lingodesk.org/setup/) covers every screen and every known pitfall.
 

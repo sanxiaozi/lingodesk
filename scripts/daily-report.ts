@@ -95,7 +95,10 @@ async function main() {
   if (quotaWarn.length)
     lines.push(`🈵 额度预警(≥80%):${quotaWarn.map((t) => `${tname(t)} ${t.usageCount}/${config.freeQuota}`).join("、")}`);
   if (disabled.length)
-    lines.push(`⚠️ 停用实例:${disabled.map((t) => `@${t.botUsername}(${t.statusNote || "手动"})`).join("、")}`);
+    lines.push(`⚠️ 停用实例:${disabled.map((t) => {
+      const days = Math.floor((Date.now() - t.updatedAt.getTime()) / 86_400_000);
+      return `@${t.botUsername}(${t.statusNote || "手动"} · 已停 ${days} 天)`;
+    }).join("、")}`);
   if (ranking.length) {
     lines.push(``, `🏆 昨日活跃:`);
     for (const r of ranking) lines.push(`   ${tname(r.t!)} — 收 ${r.in} / 发 ${r.out}`);

@@ -247,6 +247,8 @@ export function attachPortal(bot: Bot): void {
         [
           t("portal.status_bot", lang, { bot: tn.botUsername }),
           t("portal.status_state", lang, { state }),
+          // 停用实例第一时间给恢复路径(token 失效是最常见原因)
+          tn.status !== "active" ? t("portal.status_disabled_hint", lang) : null,
           t("portal.status_secretary", lang, { mode: bizMode }),
           t("portal.status_conn", lang, { val: connVal }),
           t("portal.status_reply", lang, { val: replyVal }),
