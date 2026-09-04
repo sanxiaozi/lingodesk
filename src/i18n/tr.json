@@ -89,6 +89,7 @@
   "relay.file_send_fail": "⚠️ Dosya gönderilemedi, lütfen daha sonra tekrar deneyin.",
   "relay.lang_usage": "Kullanım: /lang <ISO639-1 code>, örn. /lang es",
   "relay.lang_set": "✅ {name} kişisinin dili {code} olarak ayarlandı; sonraki giden mesajlar buna göre çevrilecek.",
+  "relay.lang_switch_hint": "Dil yanlış mı? Çıkış dilini değiştirmek için /en, /ru, /vi vb. gönderin.",
   "relay.help": "Konu komutları:\n/lang <code> — müşterinin dilini manuel olarak düzeltin (örn. /lang es)\n/t — kayıtlı bir yanıt şablonu seçip gönderin\n/t_add <label> <text> — şablon kaydedin · /t_del <label> — şablon silin\n/draft [notes] — AI son konuşmadan bir yanıt taslağı hazırlar (yönlendirmek için not ekleyin)\n/bind — bir grubu konsol olarak bağlayın\nKendi ana dilinizde yazmanız = çeviri önizlemesi, ardından müşteriye gönder",
   "relay.unknown_cmd": "Bilinmeyen komut, seçenekleri görmek için /help gönderin.",
   "relay.no_conn_text": "⚠️ business_connection henüz yakalanmadı. Telegram Business → Chatbots üzerinden yeniden bağlanarak tetikleyin.",

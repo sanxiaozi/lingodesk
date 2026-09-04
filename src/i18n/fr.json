@@ -89,6 +89,7 @@
   "relay.file_send_fail": "⚠️ Échec de l'envoi du fichier, veuillez réessayer plus tard.",
   "relay.lang_usage": "Utilisation : /lang <code ISO639-1>, par ex. /lang es",
   "relay.lang_set": "✅ Langue de {name} définie sur {code} ; les prochains envois seront traduits en conséquence.",
+  "relay.lang_switch_hint": "Mauvaise langue ? Envoyez /en, /ru, /vi, etc. pour changer la langue de sortie.",
   "relay.help": "Commandes du sujet :\n/lang <code> — corriger manuellement la langue du client (par ex. /lang es)\n/t — choisir un modèle de réponse enregistré à envoyer\n/t_add <label> <text> — enregistrer un modèle · /t_del <label> — en supprimer un\n/draft [notes] — l'IA rédige un brouillon de réponse à partir de la conversation récente (ajoutez des notes pour l'orienter)\n/bind — lier un groupe comme console\nÉcrivez simplement dans votre langue maternelle = aperçu de la traduction puis envoi au client",
   "relay.unknown_cmd": "Commande inconnue, envoyez /help pour voir les options.",
   "relay.no_conn_text": "⚠️ business_connection pas encore capturé. Déclenchez-le en vous reconnectant via Telegram Business → Chatbots.",

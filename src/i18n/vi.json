@@ -89,6 +89,7 @@
   "relay.file_send_fail": "⚠️ Gửi tệp thất bại, vui lòng thử lại sau.",
   "relay.lang_usage": "Cách dùng: /lang <mã ISO639-1>, ví dụ /lang es",
   "relay.lang_set": "✅ Đã đặt ngôn ngữ của {name} là {code}; các tin gửi đi sau này sẽ được dịch tương ứng.",
+  "relay.lang_switch_hint": "Sai ngôn ngữ? Gửi /en, /ru, /vi v.v. để đổi ngôn ngữ đầu ra.",
   "relay.help": "Các lệnh trong topic:\n/lang <code> — sửa thủ công ngôn ngữ của khách (ví dụ /lang es)\n/t — chọn một mẫu trả lời đã lưu để gửi\n/t_add <label> <text> — lưu một mẫu · /t_del <label> — xóa một mẫu\n/draft [ghi chú] — AI soạn nháp trả lời từ cuộc trò chuyện gần đây (thêm ghi chú để định hướng)\n/bind — liên kết một nhóm làm bảng điều khiển\nChỉ cần gõ bằng tiếng mẹ đẻ = xem trước bản dịch rồi gửi cho khách",
   "relay.unknown_cmd": "Lệnh không xác định, gửi /help để xem các tùy chọn.",
   "relay.no_conn_text": "⚠️ business_connection chưa được ghi nhận. Hãy kích hoạt bằng cách kết nối lại qua Telegram Business → Chatbots.",

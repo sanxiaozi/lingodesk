@@ -89,6 +89,7 @@
   "relay.file_send_fail": "⚠️ فشل إرسال الملف، يرجى المحاولة لاحقًا.",
   "relay.lang_usage": "الاستخدام: /lang <ISO639-1 code>، مثال /lang es",
   "relay.lang_set": "✅ تم ضبط لغة {name} إلى {code}؛ وستُترجَم الرسائل الصادرة مستقبلًا وفقًا لذلك.",
+  "relay.lang_switch_hint": "لغة غير صحيحة؟ أرسل /en أو /ru أو /vi وغيرها لتغيير لغة الإخراج.",
   "relay.help": "أوامر الموضوع:\n/lang <code> — تصحيح لغة العميل يدويًا (مثال /lang es)\n/t — اختيار قالب رد محفوظ لإرساله\n/t_add <label> <text> — حفظ قالب · /t_del <label> — حذف قالب\n/draft [notes] — يصيغ الذكاء الاصطناعي مسودة رد من المحادثة الأخيرة (أضف ملاحظات لتوجيهه)\n/bind — ربط مجموعة كلوحة تحكّم\nفقط اكتب بلغتك الأم = معاينة الترجمة ثم الإرسال إلى العميل",
   "relay.unknown_cmd": "أمر غير معروف، أرسل /help لرؤية الخيارات.",
   "relay.no_conn_text": "⚠️ لم يُلتقَط business_connection بعد. شغّله بإعادة الاتصال عبر Telegram Business ← Chatbots.",

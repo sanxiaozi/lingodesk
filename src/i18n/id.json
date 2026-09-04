@@ -89,6 +89,7 @@
   "relay.file_send_fail": "⚠️ Gagal mengirim file, coba lagi nanti.",
   "relay.lang_usage": "Cara pakai: /lang <kode ISO639-1>, misalnya /lang es",
   "relay.lang_set": "✅ Bahasa {name} diatur ke {code}; pesan keluar berikutnya akan diterjemahkan sesuai itu.",
+  "relay.lang_switch_hint": "Bahasa salah? Kirim /en, /ru, /vi, dll. untuk mengganti bahasa keluaran.",
   "relay.help": "Perintah topik:\n/lang <code> — perbaiki bahasa pelanggan secara manual (misalnya /lang es)\n/t — pilih templat balasan tersimpan untuk dikirim\n/t_add <label> <text> — simpan templat · /t_del <label> — hapus templat\n/draft [catatan] — AI menyusun draf balasan dari percakapan terakhir (tambahkan catatan untuk mengarahkannya)\n/bind — tautkan sebuah grup sebagai konsol\nCukup ketik dalam bahasa ibu Anda = pratinjau terjemahan lalu kirim ke pelanggan",
   "relay.unknown_cmd": "Perintah tidak dikenal, kirim /help untuk melihat opsi.",
   "relay.no_conn_text": "⚠️ business_connection belum tertangkap. Picu dengan menyambungkan ulang melalui Telegram Business → Chatbots.",

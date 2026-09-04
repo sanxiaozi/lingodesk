@@ -212,7 +212,7 @@ export function attachRelay(bot: Bot, tenantId: string, notify?: (text: string) 
       tr("relay.card_original", uiLang, { text: original }),
       `🌐 ${native}`,
       "─────",
-      tr("relay.card_footer", uiLang, { lang: resolveLang(lang) }),
+      `${tr("relay.card_footer", uiLang, { lang: resolveLang(lang) })} ${tr("relay.lang_switch_hint", uiLang)}`,
     ].join("\n");
   }
 
@@ -330,7 +330,7 @@ export function attachRelay(bot: Bot, tenantId: string, notify?: (text: string) 
         const head = c.isNew ? `${tr("relay.card_new", t.nativeLang)}\n` : "";
         await ctx.api.sendMessage(
           forum,
-          `${head}${tr("relay.card_original", t.nativeLang, { text })}\n🌐 ${native}\n\n${tr("relay.card_footer", t.nativeLang, { lang: resolveLang(lang) })}`,
+          `${head}${tr("relay.card_original", t.nativeLang, { text })}\n🌐 ${native}\n\n${tr("relay.card_footer", t.nativeLang, { lang: resolveLang(lang) })} ${tr("relay.lang_switch_hint", t.nativeLang)}`,
           { message_thread_id: c.threadId },
         );
         await logMessage({ contactId: c.id, direction: "in", originalText: text, originalLang: lang, nativeText: native });
@@ -383,7 +383,7 @@ export function attachRelay(bot: Bot, tenantId: string, notify?: (text: string) 
         const r = await translateInbound(text, t.nativeLang);
         if (contact.lang === "unknown" && r.lang !== "unknown") await setLang(contact.id, r.lang);
         const shownLang = resolveLang(contact.lang === "unknown" ? r.lang : contact.lang);
-        await deliver(`${head}(${shownLang})\n${tr("relay.card_original", t.nativeLang, { text })}\n🌐 ${r.native}\n\n${tr("relay.pc_footer", t.nativeLang, { id: String(contact.id) })}`);
+        await deliver(`${head}(${shownLang})\n${tr("relay.card_original", t.nativeLang, { text })}\n🌐 ${r.native}\n\n${tr("relay.pc_footer", t.nativeLang, { id: String(contact.id) })} ${tr("relay.lang_switch_hint", t.nativeLang)}`);
         await logMessage({ contactId: contact.id, direction: "in", originalText: text, originalLang: r.lang, nativeText: r.native });
       } catch (e) {
         console.error(`[${tenantId}] 私聊控制台翻译失败,原文落档:`, e);
@@ -641,24 +641,32 @@ export function attachRelay(bot: Bot, tenantId: string, notify?: (text: string) 
       if (!opts?.botFront || !t) return next();
       if (String(ctx.from?.id ?? "") === (t.ownerUserId || t.id)) {
         // 租户本人私聊自己的 bot:无群模式的控制台
-        const txt = ctx.message.text;
-        if (txt && !txt.startsWith("/")) {
-          // ① 对客户卡片「回复」→ 按 #c 标记路由到该客户的翻译预览
-          const rep = ctx.message.reply_to_message;
-          const repText = (rep && "text" in rep ? rep.text : undefined) ?? (rep && "caption" in rep ? rep.caption : undefined);
-          const mTag = repText?.match(/#c(\d+)/);
-          if (mTag) {
-            const c = await getContactById(Number(mTag[1]));
-            if (c && c.tenantId === tenantId) {
+        const txt = ctx.message.text?.trim();
+        const rep = ctx.message.reply_to_message;
+        const repText = (rep && "text" in rep ? rep.text : undefined) ?? (rep && "caption" in rep ? rep.caption : undefined);
+        const mTag = repText?.match(/#c(\d+)/);
+        if (txt && mTag) {
+          const c = await getContactById(Number(mTag[1]));
+          if (c && c.tenantId === tenantId) {
+            // ① 对客户卡片「回复」发语言短码(/en /ru…)→ 切换该客户译出语言
+            const short = txt.match(/^\/([a-z]{2,3})$/);
+            if (short) {
+              const code = normalizeLangCode(short[1]!);
+              await setLang(c.id, code);
+              await ctx.reply(tr("relay.lang_set", t.nativeLang, { name: c.name, code }));
+              return;
+            }
+            // ② 对客户卡片「回复」打母语 → 该客户的翻译预览
+            if (!txt.startsWith("/")) {
               await startPreview(t, c, { chat: ctx.chat.id }, txt);
               return;
             }
           }
-          // ② 无群模式下直接打字 → 最近客户选择器
-          if (!t.forumChatId) {
-            await sendContactPicker(ctx, t, txt, "relay.pc_pick", "relay.pc_no_contacts");
-            return;
-          }
+        }
+        // ③ 无群模式下直接打字 → 最近客户选择器
+        if (txt && !txt.startsWith("/") && !t.forumChatId) {
+          await sendContactPicker(ctx, t, txt, "relay.pc_pick", "relay.pc_no_contacts");
+          return;
         }
         return next();
       }
@@ -834,6 +842,12 @@ export function attachRelay(bot: Bot, tenantId: string, notify?: (text: string) 
         }
       } else if (cmd === "/help") {
         await ctx.reply(tr("relay.help", t.nativeLang), { message_thread_id: threadId });
+      } else if (cmd && /^\/[a-z]{2,3}$/.test(cmd) && !arg) {
+        // 语言短码:/en /ru /vi… 一键切换该客户的译出语言(等价 /lang <码>;
+        // 自动检测锁错语种时——如罗马字印地语被锁 hi——这是最快的纠正通道)
+        const code = normalizeLangCode(cmd.slice(1));
+        await setLang(contact.id, code);
+        await ctx.reply(tr("relay.lang_set", t.nativeLang, { name: contact.name, code }), { message_thread_id: threadId });
       } else {
         await ctx.reply(tr("relay.unknown_cmd", t.nativeLang), { message_thread_id: threadId });
       }
