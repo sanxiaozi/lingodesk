@@ -57,6 +57,8 @@
   "billing.invoice_title": "LingoDesk Pro",
   "billing.invoice_desc": "حصة ترجمة غير محدودة + جهات اتصال غير محدودة + دعم ذو أولوية. يتجدّد شهريًا تلقائيًا، وتستطيع الإلغاء في أي وقت.",
   "billing.invoice_price_label": "LingoDesk Pro / شهريًا",
+  "billing.invoice_msg": "⭐ اشتراك LingoDesk Pro الشهري — ردود مترجمة بلا حدود، {price} Stars شهريًا، يتجدد كل 30 يومًا، ويمكنك الإلغاء في أي وقت (الإعدادات ← My Stars). اضغط أدناه للدفع:",
+  "billing.invoice_btn": "⭐ ادفع {price} Stars — احصل على Pro",
   "billing.pay_no_tenant": "تم استلام الدفعة، لكن لم أعثر على ملف المستأجر الخاص بك بعد 🤔 أرسل توكن بوت للتفعيل أولًا؛ وأرسل /paysupport إن احتجت مساعدة.",
   "billing.pay_renewed": "✅ تم تجديد LingoDesk Pro تلقائيًا، شكرًا لدعمك!",
   "billing.pay_upgraded": "🎉 تمت الترقية إلى LingoDesk Pro! حصة الترجمة الآن غير محدودة، ويتجدّد شهريًا تلقائيًا. للإلغاء، اذهب في أي وقت إلى Telegram Settings ← My Stars.",

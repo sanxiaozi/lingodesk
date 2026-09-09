@@ -57,6 +57,8 @@
   "billing.invoice_title": "LingoDesk Pro",
   "billing.invoice_desc": "Unlimited translation quota + unlimited contacts + priority support. Auto-renews monthly, cancel anytime.",
   "billing.invoice_price_label": "LingoDesk Pro / month",
+  "billing.invoice_msg": "⭐ LingoDesk Pro monthly — unlimited translated replies, {price} Stars/month, renews every 30 days, cancel anytime (Settings → My Stars). Tap below to pay:",
+  "billing.invoice_btn": "⭐ Pay {price} Stars — go Pro",
   "billing.pay_no_tenant": "Payment received, but I couldn't find your tenant profile yet 🤔 Send a bot token to activate first; send /paysupport if you need help.",
   "billing.pay_renewed": "✅ LingoDesk Pro auto-renewed, thanks for your support!",
   "billing.pay_upgraded": "🎉 Upgraded to LingoDesk Pro! Translation quota is now unlimited, auto-renews monthly. To cancel, anytime go to Telegram Settings → My Stars.",

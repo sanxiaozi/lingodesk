@@ -3,7 +3,9 @@
  * 收款集中在官方门户 bot —— 用户在 @LingoDeskbot 私聊里订阅,Stars 进平台账户,
  * 付款成功后按 owner user.id 关联到其租户,置 plan=pro。
  *
- * 注:sendInvoice 直接走 Bot API(当前 grammy 版本的类型未含 subscription_period),最可控。
+ * 注:Stars 订阅发票只能经 createInvoiceLink 创建(subscription_period 仅该接口支持;
+ * sendInvoice 带 subscription_period 会报 SUBSCRIPTION_EXPORT_MISSING —— 线上真实踩坑),
+ * 拿到链接后以内联按钮消息发给用户;支付回调(pre_checkout/successful_payment)与普通发票一致。
  */
 import type { Context } from "grammy";
 import { config } from "./config.js";
@@ -13,23 +15,33 @@ import { getTenant, setPlanPro, setLitePlanPro } from "./db.js";
 export const PRO_PAYLOAD = "lingodesk_pro_monthly";
 const PERIOD = 2592000; // 30 天(秒),Telegram 订阅唯一允许的周期
 
-/** 给某人发 Pro 月订阅发票(Telegram Stars,自动续订) */
+/** 给某人发 Pro 月订阅发票(Telegram Stars,自动续订):建订阅发票链接 → 按钮消息 */
 export async function sendProInvoice(token: string, chatId: number, lang?: string | null): Promise<void> {
-  const r = await fetch(`https://api.telegram.org/bot${token}/sendInvoice`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({
-      chat_id: chatId,
-      title: t("billing.invoice_title", lang),
-      description: t("billing.invoice_desc", lang),
-      payload: PRO_PAYLOAD,
-      currency: "XTR", // Telegram Stars
-      prices: [{ label: t("billing.invoice_price_label", lang), amount: config.priceStars }],
-      subscription_period: PERIOD,
-    }),
+  const api = (method: string, body: unknown) =>
+    fetch(`https://api.telegram.org/bot${token}/${method}`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+    }).then((r) => r.json() as Promise<{ ok: boolean; result?: unknown; description?: string }>);
+
+  const link = await api("createInvoiceLink", {
+    title: t("billing.invoice_title", lang),
+    description: t("billing.invoice_desc", lang),
+    payload: PRO_PAYLOAD,
+    currency: "XTR", // Telegram Stars
+    prices: [{ label: t("billing.invoice_price_label", lang), amount: config.priceStars }],
+    subscription_period: PERIOD,
   });
-  const j = (await r.json()) as { ok: boolean; description?: string };
-  if (!j.ok) throw new Error(`sendInvoice 失败:${j.description ?? "未知"}`);
+  if (!link.ok || typeof link.result !== "string") throw new Error(`createInvoiceLink 失败:${link.description ?? "未知"}`);
+
+  const sent = await api("sendMessage", {
+    chat_id: chatId,
+    text: t("billing.invoice_msg", lang, { price: String(config.priceStars) }),
+    reply_markup: {
+      inline_keyboard: [[{ text: t("billing.invoice_btn", lang, { price: String(config.priceStars) }), url: link.result }]],
+    },
+  });
+  if (!sent.ok) throw new Error(`发送发票链接失败:${sent.description ?? "未知"}`);
 }
 
 interface StarPayment {

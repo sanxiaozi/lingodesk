@@ -57,6 +57,8 @@
   "billing.invoice_title": "LingoDesk Pro",
   "billing.invoice_desc": "असीमित अनुवाद कोटा + असीमित संपर्क + प्राथमिकता समर्थन। हर महीने अपने आप नवीनीकृत, कभी भी रद्द करें।",
   "billing.invoice_price_label": "LingoDesk Pro / माह",
+  "billing.invoice_msg": "⭐ LingoDesk Pro मासिक — असीमित अनुवादित जवाब, {price} Stars/माह, हर 30 दिन में नवीनीकरण, कभी भी रद्द करें (सेटिंग्स → My Stars)। भुगतान के लिए नीचे टैप करें:",
+  "billing.invoice_btn": "⭐ {price} Stars चुकाएँ — Pro बनें",
   "billing.pay_no_tenant": "भुगतान मिल गया, पर मुझे अभी तक आपकी टेनेंट प्रोफ़ाइल नहीं मिली 🤔 पहले सक्रिय करने के लिए एक बॉट टोकन भेजें; मदद चाहिए तो /paysupport भेजें।",
   "billing.pay_renewed": "✅ LingoDesk Pro अपने आप नवीनीकृत हो गया, आपके समर्थन के लिए धन्यवाद!",
   "billing.pay_upgraded": "🎉 LingoDesk Pro में अपग्रेड हो गया! अनुवाद कोटा अब असीमित है, हर महीने अपने आप नवीनीकृत होगा। रद्द करने के लिए, कभी भी Telegram Settings → My Stars में जाएँ।",

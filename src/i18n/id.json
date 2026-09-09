@@ -57,6 +57,8 @@
   "billing.invoice_title": "LingoDesk Pro",
   "billing.invoice_desc": "Kuota terjemahan tanpa batas + kontak tanpa batas + dukungan prioritas. Perpanjangan otomatis bulanan, batalkan kapan saja.",
   "billing.invoice_price_label": "LingoDesk Pro / bulan",
+  "billing.invoice_msg": "⭐ LingoDesk Pro bulanan — balasan terjemahan tanpa batas, {price} Stars/bulan, diperpanjang setiap 30 hari, batalkan kapan saja (Pengaturan → My Stars). Ketuk di bawah untuk membayar:",
+  "billing.invoice_btn": "⭐ Bayar {price} Stars — jadi Pro",
   "billing.pay_no_tenant": "Pembayaran diterima, tapi saya belum menemukan profil tenant Anda 🤔 Kirim token bot untuk mengaktifkan dulu; kirim /paysupport jika butuh bantuan.",
   "billing.pay_renewed": "✅ LingoDesk Pro berhasil diperpanjang otomatis, terima kasih atas dukungan Anda!",
   "billing.pay_upgraded": "🎉 Berhasil upgrade ke LingoDesk Pro! Kuota terjemahan kini tanpa batas, perpanjangan otomatis bulanan. Untuk membatalkan, kapan saja buka Pengaturan Telegram → My Stars.",

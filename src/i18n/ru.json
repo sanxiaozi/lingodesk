@@ -57,6 +57,8 @@
   "billing.invoice_title": "LingoDesk Pro",
   "billing.invoice_desc": "Безлимитная квота перевода + неограниченное число контактов + приоритетная поддержка. Автопродление ежемесячно, отмена в любой момент.",
   "billing.invoice_price_label": "LingoDesk Pro / месяц",
+  "billing.invoice_msg": "⭐ LingoDesk Pro на месяц — безлимитные переведённые ответы, {price} Stars/мес, продлевается каждые 30 дней, отмена в любой момент (Настройки → My Stars). Нажмите ниже, чтобы оплатить:",
+  "billing.invoice_btn": "⭐ Оплатить {price} Stars — перейти на Pro",
   "billing.pay_no_tenant": "Платёж получен, но я пока не нашёл профиль вашего арендатора 🤔 Сначала пришлите токен бота для активации; отправьте /paysupport, если нужна помощь.",
   "billing.pay_renewed": "✅ LingoDesk Pro продлён автоматически, спасибо за вашу поддержку!",
   "billing.pay_upgraded": "🎉 Вы перешли на LingoDesk Pro! Квота перевода теперь безлимитная, автопродление ежемесячно. Чтобы отменить, в любой момент откройте Telegram Settings → My Stars.",

@@ -57,6 +57,8 @@
   "billing.invoice_title": "LingoDesk Pro",
   "billing.invoice_desc": "Hạn mức dịch không giới hạn + liên hệ không giới hạn + hỗ trợ ưu tiên. Tự động gia hạn hàng tháng, hủy bất cứ lúc nào.",
   "billing.invoice_price_label": "LingoDesk Pro / tháng",
+  "billing.invoice_msg": "⭐ LingoDesk Pro hàng tháng — trả lời kèm bản dịch không giới hạn, {price} Stars/tháng, gia hạn mỗi 30 ngày, hủy bất cứ lúc nào (Cài đặt → My Stars). Nhấn bên dưới để thanh toán:",
+  "billing.invoice_btn": "⭐ Thanh toán {price} Stars — lên Pro",
   "billing.pay_no_tenant": "Đã nhận thanh toán, nhưng tôi chưa tìm thấy hồ sơ tenant của bạn 🤔 Hãy gửi token bot để kích hoạt trước; gửi /paysupport nếu bạn cần trợ giúp.",
   "billing.pay_renewed": "✅ LingoDesk Pro đã tự động gia hạn, cảm ơn bạn đã ủng hộ!",
   "billing.pay_upgraded": "🎉 Đã nâng cấp lên LingoDesk Pro! Hạn mức dịch giờ đã không giới hạn, tự động gia hạn hàng tháng. Để hủy, vào Telegram Settings → My Stars bất cứ lúc nào.",

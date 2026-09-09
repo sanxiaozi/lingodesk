@@ -57,6 +57,8 @@
   "billing.invoice_title": "LingoDesk Pro",
   "billing.invoice_desc": "无限翻译额度 + 无限联系人 + 优先支持。每月自动续费,可随时取消。",
   "billing.invoice_price_label": "LingoDesk Pro / 月",
+  "billing.invoice_msg": "⭐ LingoDesk Pro 月订阅 —— 无限量翻译回复,{price} Stars/月,30 天自动续费,随时可取消(设置 → 我的星星)。点下方按钮完成支付:",
+  "billing.invoice_btn": "⭐ 支付 {price} Stars 开通 Pro",
   "billing.pay_no_tenant": "收到付款,但还没找到你的租户档案 🤔 先发 bot token 开通;如需帮助发 /paysupport。",
   "billing.pay_renewed": "✅ LingoDesk Pro 已自动续费,谢谢支持!",
   "billing.pay_upgraded": "🎉 已升级 LingoDesk Pro!翻译额度解锁为无限,每月自动续费。想取消随时在 Telegram 的 设置 → 我的星星(My Stars)里操作。",
