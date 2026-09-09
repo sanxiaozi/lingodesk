@@ -280,7 +280,12 @@ export function attachPortal(bot: Bot): void {
           : t("portal.usage_quota_unlimited", lang);
         const hist = await monthlyHistory(uid, 3);
         const histLines = hist.length ? hist.map((h) => `   ${h.month}: ${h.outCount}`).join("\n") : "   —";
-        await ctx.reply([t("portal.usage_header", lang), quotaLine, t("portal.usage_history", lang), histLines].join("\n"));
+        await ctx.reply([t("portal.usage_header", lang), quotaLine, t("portal.usage_history", lang), histLines].join("\n"), {
+          // 非 Pro 用户看用量时给一键升级入口(点按直接出支付步骤,不用记 /subscribe)
+          ...(config.billingEnabled && lu.plan !== "pro"
+            ? { reply_markup: { inline_keyboard: [[{ text: t("relay.btn_upgrade", lang), callback_data: "subx:0" }]] } }
+            : {}),
+        });
         return;
       }
       const [m, hist] = await Promise.all([tenantMonthStats(tn.id), monthlyHistory(tn.id, 3)]);
@@ -300,6 +305,11 @@ export function attachPortal(bot: Bot): void {
           t("portal.usage_history", lang),
           histLines,
         ].join("\n"),
+        {
+          ...(config.billingEnabled && tn.plan !== "pro"
+            ? { reply_markup: { inline_keyboard: [[{ text: t("relay.btn_upgrade", lang), callback_data: "subx:0" }]] } }
+            : {}),
+        },
       );
       return;
     }
@@ -479,6 +489,18 @@ export function attachPortal(bot: Bot): void {
   // ── 私聊翻译「↔️ 反向」回调(共享实例上 relay 的 send/cancel/tpl 会先处理并 next 其余) ──
   bot.on("callback_query:data", async (ctx, next) => {
     const [action, arg] = ctx.callbackQuery.data.split(":");
+    // /usage 里的「⭐ 升级 Pro」按钮 → 直接走订阅发票流程
+    if (action === "subx") {
+      const lang0 = (await getTenant(String(ctx.from.id)))?.nativeLang || resolveUiLang(ctx.from.language_code);
+      await ctx.answerCallbackQuery().catch(() => {});
+      try {
+        await sendProInvoice(config.botToken, ctx.from.id, lang0);
+      } catch (e) {
+        console.error("发订阅发票失败:", e);
+        await ctx.reply(t("portal.subscribe_invoice_fail", lang0)).catch(() => {});
+      }
+      return;
+    }
     if (action === "bfguide") {
       const lang = (await getTenant(String(ctx.from.id)))?.nativeLang || resolveUiLang(ctx.from.language_code);
       await ctx.answerCallbackQuery().catch(() => {});

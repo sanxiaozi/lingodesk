@@ -57,7 +57,7 @@
   "billing.invoice_title": "LingoDesk Pro",
   "billing.invoice_desc": "Unlimited translation quota + unlimited contacts + priority support. Auto-renews monthly, cancel anytime.",
   "billing.invoice_price_label": "LingoDesk Pro / month",
-  "billing.invoice_msg": "⭐ LingoDesk Pro monthly — unlimited translated replies, {price} Stars/month, renews every 30 days, cancel anytime (Settings → My Stars). Tap below to pay:",
+  "billing.invoice_msg": "⭐ Upgrade to LingoDesk Pro — unlimited translated replies, {price} Stars/month (≈ $7)\n\n1️⃣ Tap the Pay button below\n2️⃣ No Stars balance? Telegram will walk you through buying them with a bank card / Apple Pay / Google Pay — just follow the prompts\n3️⃣ Activation is instant after payment — send /status to confirm\n\nRenews every 30 days, cancel anytime: Telegram Settings → My Stars. Questions? Send /paysupport.",
   "billing.invoice_btn": "⭐ Pay {price} Stars — go Pro",
   "billing.pay_no_tenant": "Payment received, but I couldn't find your tenant profile yet 🤔 Send a bot token to activate first; send /paysupport if you need help.",
   "billing.pay_renewed": "✅ LingoDesk Pro auto-renewed, thanks for your support!",

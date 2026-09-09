@@ -57,7 +57,7 @@
   "billing.invoice_title": "LingoDesk Pro",
   "billing.invoice_desc": "โควตาการแปลไม่จำกัด + ผู้ติดต่อไม่จำกัด + การสนับสนุนแบบให้ความสำคัญก่อน ต่ออายุอัตโนมัติทุกเดือน ยกเลิกได้ทุกเมื่อ",
   "billing.invoice_price_label": "LingoDesk Pro / เดือน",
-  "billing.invoice_msg": "⭐ LingoDesk Pro รายเดือน — ตอบกลับพร้อมคำแปลไม่จำกัด, {price} Stars/เดือน ต่ออายุทุก 30 วัน ยกเลิกได้ทุกเมื่อ (การตั้งค่า → My Stars) แตะด้านล่างเพื่อชำระเงิน:",
+  "billing.invoice_msg": "⭐ อัปเกรดเป็น LingoDesk Pro — ตอบกลับพร้อมคำแปลได้ไม่จำกัด, {price} Stars/เดือน (≈ $7)\n\n1️⃣ แตะปุ่มชำระเงินด้านล่าง\n2️⃣ ยังไม่มียอด Stars? Telegram จะพาคุณซื้อด้วยบัตรธนาคาร / Apple Pay / Google Pay ทีละขั้นตอน — แค่ทำตามคำแนะนำ\n3️⃣ เปิดใช้งานทันทีหลังชำระเงิน — ส่ง /status เพื่อยืนยัน\n\nต่ออายุทุก 30 วัน ยกเลิกได้ทุกเมื่อ: การตั้งค่า Telegram → My Stars มีคำถาม? ส่ง /paysupport",
   "billing.invoice_btn": "⭐ จ่าย {price} Stars — อัปเกรดเป็น Pro",
   "billing.pay_no_tenant": "ได้รับการชำระเงินแล้ว แต่ฉันยังหาโปรไฟล์ผู้ใช้ของคุณไม่พบ 🤔 ส่งโทเคนบอทเพื่อเปิดใช้งานก่อน; ส่ง /paysupport หากต้องการความช่วยเหลือ",
   "billing.pay_renewed": "✅ LingoDesk Pro ต่ออายุอัตโนมัติแล้ว ขอบคุณสำหรับการสนับสนุน!",
