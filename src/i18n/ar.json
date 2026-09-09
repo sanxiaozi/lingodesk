@@ -57,7 +57,7 @@
   "billing.invoice_title": "LingoDesk Pro",
   "billing.invoice_desc": "حصة ترجمة غير محدودة + جهات اتصال غير محدودة + دعم ذو أولوية. يتجدّد شهريًا تلقائيًا، وتستطيع الإلغاء في أي وقت.",
   "billing.invoice_price_label": "LingoDesk Pro / شهريًا",
-  "billing.invoice_msg": "⭐ قم بالترقية إلى LingoDesk Pro — ردود مترجمة غير محدودة، {price} Stars شهريًا (≈ $7)\n\n1️⃣ اضغط على زر الدفع أدناه\n2️⃣ لا يوجد لديك رصيد Stars؟ سيرشدك Telegram خطوة بخطوة لشرائها بالبطاقة البنكية / Apple Pay / Google Pay — فقط اتبع التعليمات\n3️⃣ يتم التفعيل فورًا بعد الدفع — أرسل /status للتأكيد\n\nيتجدد كل 30 يومًا ويمكنك الإلغاء في أي وقت: إعدادات Telegram ← My Stars. لديك أسئلة؟ أرسل /paysupport.",
+  "billing.invoice_msg": "⭐ قم بالترقية إلى LingoDesk Pro — ردود مترجمة غير محدودة، {price} Stars شهريًا (≈ {usd})\n\n1️⃣ اضغط على زر الدفع أدناه\n2️⃣ لا يوجد لديك رصيد Stars؟ سيرشدك Telegram خطوة بخطوة لشرائها بالبطاقة البنكية / Apple Pay / Google Pay — فقط اتبع التعليمات\n3️⃣ يتم التفعيل فورًا بعد الدفع — أرسل /status للتأكيد\n\nيتجدد كل 30 يومًا ويمكنك الإلغاء في أي وقت: إعدادات Telegram ← My Stars. لديك أسئلة؟ أرسل /paysupport.",
   "billing.invoice_btn": "⭐ ادفع {price} Stars — احصل على Pro",
   "billing.pay_no_tenant": "تم استلام الدفعة، لكن لم أعثر على ملف المستأجر الخاص بك بعد 🤔 أرسل توكن بوت للتفعيل أولًا؛ وأرسل /paysupport إن احتجت مساعدة.",
   "billing.pay_renewed": "✅ تم تجديد LingoDesk Pro تلقائيًا، شكرًا لدعمك!",

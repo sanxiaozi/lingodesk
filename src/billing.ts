@@ -34,9 +34,11 @@ export async function sendProInvoice(token: string, chatId: number, lang?: strin
   });
   if (!link.ok || typeof link.result !== "string") throw new Error(`createInvoiceLink 失败:${link.description ?? "未知"}`);
 
+  // Stars→美元近似锚定(1 Star ≈ $0.015,给不熟悉 Stars 的用户一个价格概念)
+  const usd = `$${(config.priceStars * 0.015).toFixed(2).replace(/\.?0+$/, "")}`;
   const sent = await api("sendMessage", {
     chat_id: chatId,
-    text: t("billing.invoice_msg", lang, { price: String(config.priceStars) }),
+    text: t("billing.invoice_msg", lang, { price: String(config.priceStars), usd }),
     reply_markup: {
       inline_keyboard: [[{ text: t("billing.invoice_btn", lang, { price: String(config.priceStars) }), url: link.result }]],
     },

@@ -57,7 +57,7 @@
   "billing.invoice_title": "LingoDesk Pro",
   "billing.invoice_desc": "无限翻译额度 + 无限联系人 + 优先支持。每月自动续费,可随时取消。",
   "billing.invoice_price_label": "LingoDesk Pro / 月",
-  "billing.invoice_msg": "⭐ 升级 LingoDesk Pro —— 无限量翻译回复,{price} Stars/月(≈ $7)\n\n1️⃣ 点下方「支付」按钮\n2️⃣ 没有 Stars 余额?Telegram 会自动引导你用银行卡 / Apple Pay / Google Pay 购买,跟着提示走即可\n3️⃣ 支付完成立即生效,发 /status 可确认\n\n30 天自动续费,随时取消:Telegram 设置 → 我的星星(My Stars)。有问题发 /paysupport。",
+  "billing.invoice_msg": "⭐ 升级 LingoDesk Pro —— 无限量翻译回复,{price} Stars/月(≈ {usd})\n\n1️⃣ 点下方「支付」按钮\n2️⃣ 没有 Stars 余额?Telegram 会自动引导你用银行卡 / Apple Pay / Google Pay 购买,跟着提示走即可\n3️⃣ 支付完成立即生效,发 /status 可确认\n\n30 天自动续费,随时取消:Telegram 设置 → 我的星星(My Stars)。有问题发 /paysupport。",
   "billing.invoice_btn": "⭐ 支付 {price} Stars 开通 Pro",
   "billing.pay_no_tenant": "收到付款,但还没找到你的租户档案 🤔 先发 bot token 开通;如需帮助发 /paysupport。",
   "billing.pay_renewed": "✅ LingoDesk Pro 已自动续费,谢谢支持!",

@@ -57,7 +57,7 @@
   "billing.invoice_title": "LingoDesk Pro",
   "billing.invoice_desc": "Kuota terjemahan tanpa batas + kontak tanpa batas + dukungan prioritas. Perpanjangan otomatis bulanan, batalkan kapan saja.",
   "billing.invoice_price_label": "LingoDesk Pro / bulan",
-  "billing.invoice_msg": "⭐ Upgrade ke LingoDesk Pro — balasan terjemahan tanpa batas, {price} Stars/bulan (≈ $7)\n\n1️⃣ Ketuk tombol Bayar di bawah\n2️⃣ Belum punya saldo Stars? Telegram akan memandu kamu membelinya dengan kartu bank / Apple Pay / Google Pay — cukup ikuti petunjuknya\n3️⃣ Aktivasi langsung berlaku setelah pembayaran — kirim /status untuk konfirmasi\n\nDiperpanjang setiap 30 hari, bisa dibatalkan kapan saja: Pengaturan Telegram → My Stars. Ada pertanyaan? Kirim /paysupport.",
+  "billing.invoice_msg": "⭐ Upgrade ke LingoDesk Pro — balasan terjemahan tanpa batas, {price} Stars/bulan (≈ {usd})\n\n1️⃣ Ketuk tombol Bayar di bawah\n2️⃣ Belum punya saldo Stars? Telegram akan memandu kamu membelinya dengan kartu bank / Apple Pay / Google Pay — cukup ikuti petunjuknya\n3️⃣ Aktivasi langsung berlaku setelah pembayaran — kirim /status untuk konfirmasi\n\nDiperpanjang setiap 30 hari, bisa dibatalkan kapan saja: Pengaturan Telegram → My Stars. Ada pertanyaan? Kirim /paysupport.",
   "billing.invoice_btn": "⭐ Bayar {price} Stars — jadi Pro",
   "billing.pay_no_tenant": "Pembayaran diterima, tapi saya belum menemukan profil tenant Anda 🤔 Kirim token bot untuk mengaktifkan dulu; kirim /paysupport jika butuh bantuan.",
   "billing.pay_renewed": "✅ LingoDesk Pro berhasil diperpanjang otomatis, terima kasih atas dukungan Anda!",

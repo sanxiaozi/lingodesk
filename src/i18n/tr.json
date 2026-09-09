@@ -57,7 +57,7 @@
   "billing.invoice_title": "LingoDesk Pro",
   "billing.invoice_desc": "Sınırsız çeviri kotası + sınırsız kişi + öncelikli destek. Her ay otomatik yenilenir, istediğiniz zaman iptal edin.",
   "billing.invoice_price_label": "LingoDesk Pro / ay",
-  "billing.invoice_msg": "⭐ LingoDesk Pro'ya yükseltin — sınırsız çevrilmiş yanıt, ayda {price} Stars (≈ $7)\n\n1️⃣ Aşağıdaki Öde düğmesine dokunun\n2️⃣ Stars bakiyeniz yok mu? Telegram, banka kartı / Apple Pay / Google Pay ile satın almanız için size adım adım yol gösterecek — yönergeleri izlemeniz yeterli\n3️⃣ Ödemeden hemen sonra etkinleşir — onaylamak için /status gönderin\n\nHer 30 günde bir yenilenir, istediğiniz zaman iptal edebilirsiniz: Telegram Ayarlar → My Stars. Sorunuz mu var? /paysupport gönderin.",
+  "billing.invoice_msg": "⭐ LingoDesk Pro'ya yükseltin — sınırsız çevrilmiş yanıt, ayda {price} Stars (≈ {usd})\n\n1️⃣ Aşağıdaki Öde düğmesine dokunun\n2️⃣ Stars bakiyeniz yok mu? Telegram, banka kartı / Apple Pay / Google Pay ile satın almanız için size adım adım yol gösterecek — yönergeleri izlemeniz yeterli\n3️⃣ Ödemeden hemen sonra etkinleşir — onaylamak için /status gönderin\n\nHer 30 günde bir yenilenir, istediğiniz zaman iptal edebilirsiniz: Telegram Ayarlar → My Stars. Sorunuz mu var? /paysupport gönderin.",
   "billing.invoice_btn": "⭐ {price} Stars öde — Pro'ya geç",
   "billing.pay_no_tenant": "Ödeme alındı ama kiracı profilinizi henüz bulamadım 🤔 Önce bir bot token'ı göndererek etkinleştirin; yardım gerekiyorsa /paysupport gönderin.",
   "billing.pay_renewed": "✅ LingoDesk Pro otomatik yenilendi, desteğiniz için teşekkürler!",

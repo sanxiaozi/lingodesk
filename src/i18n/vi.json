@@ -57,7 +57,7 @@
   "billing.invoice_title": "LingoDesk Pro",
   "billing.invoice_desc": "Hạn mức dịch không giới hạn + liên hệ không giới hạn + hỗ trợ ưu tiên. Tự động gia hạn hàng tháng, hủy bất cứ lúc nào.",
   "billing.invoice_price_label": "LingoDesk Pro / tháng",
-  "billing.invoice_msg": "⭐ Nâng cấp lên LingoDesk Pro — trả lời kèm bản dịch không giới hạn, {price} Stars/tháng (≈ $7)\n\n1️⃣ Nhấn nút Thanh toán bên dưới\n2️⃣ Chưa có Stars? Telegram sẽ hướng dẫn bạn mua bằng thẻ ngân hàng / Apple Pay / Google Pay — chỉ cần làm theo hướng dẫn\n3️⃣ Kích hoạt ngay sau khi thanh toán — gửi /status để xác nhận\n\nGia hạn mỗi 30 ngày, hủy bất cứ lúc nào: Cài đặt Telegram → My Stars. Có thắc mắc? Gửi /paysupport.",
+  "billing.invoice_msg": "⭐ Nâng cấp lên LingoDesk Pro — trả lời kèm bản dịch không giới hạn, {price} Stars/tháng (≈ {usd})\n\n1️⃣ Nhấn nút Thanh toán bên dưới\n2️⃣ Chưa có Stars? Telegram sẽ hướng dẫn bạn mua bằng thẻ ngân hàng / Apple Pay / Google Pay — chỉ cần làm theo hướng dẫn\n3️⃣ Kích hoạt ngay sau khi thanh toán — gửi /status để xác nhận\n\nGia hạn mỗi 30 ngày, hủy bất cứ lúc nào: Cài đặt Telegram → My Stars. Có thắc mắc? Gửi /paysupport.",
   "billing.invoice_btn": "⭐ Thanh toán {price} Stars — lên Pro",
   "billing.pay_no_tenant": "Đã nhận thanh toán, nhưng tôi chưa tìm thấy hồ sơ tenant của bạn 🤔 Hãy gửi token bot để kích hoạt trước; gửi /paysupport nếu bạn cần trợ giúp.",
   "billing.pay_renewed": "✅ LingoDesk Pro đã tự động gia hạn, cảm ơn bạn đã ủng hộ!",
