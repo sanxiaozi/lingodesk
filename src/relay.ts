@@ -15,7 +15,7 @@
 import type { Bot, Context } from "grammy";
 import { config } from "./config.js";
 import { t as tr } from "./i18n.js";
-import { translateInbound, translateOutbound, langName, normalizeLangCode } from "./ai/translate.js";
+import { translateInbound, translateOutbound, langName, normalizeLangCode, type ChatTurn } from "./ai/translate.js";
 import { complete } from "./ai/_client.js";
 import { downloadTgFile } from "./storage.js";
 import {
@@ -89,11 +89,23 @@ export function attachRelay(bot: Bot, tenantId: string, notify?: (text: string) 
   const generalStore = new Map<number, string>();
   let generalSeq = 0;
 
+  /** 最近 8 条往来 → 翻译上下文(代词/术语/语域一致;失败不阻塞,回退无上下文) */
+  async function chatContext(contactId: number): Promise<ChatTurn[]> {
+    try {
+      const rows = await recentMessages(contactId, 8);
+      return rows
+        .filter((r) => r.originalText && r.mediaType !== "media")
+        .map((r) => ({ role: r.direction === "in" ? ("customer" as const) : ("me" as const), text: r.originalText!.slice(0, 200) }));
+    } catch {
+      return [];
+    }
+  }
+
   /** 统一出站预览:母语文本 → 译客户语 → 弹预览卡(确认才发)。打字/模板/AI 拟稿/私聊控制台共用。
    *  dest = 预览卡投递位置:控制台话题(chat=论坛群+thread)或无群模式的租户私聊(chat=owner)。 */
   async function startPreview(t: Tenant, contact: { id: number; chatId: string; connId: string | null; lang: string; viaBot?: boolean; name?: string }, dest: { chat: number; thread?: number }, text: string): Promise<void> {
     const targetLang = resolveLang(contact.lang);
-    const translated = await translateOutbound(text, targetLang);
+    const translated = await translateOutbound(text, targetLang, await chatContext(contact.id));
     const token = ++pendingSeq;
     pendingOut.set(token, { contactId: contact.id, chatId: contact.chatId, connId: contact.connId ?? undefined, lang: targetLang, translated, original: text, viaBot: contact.viaBot ?? false, name: contact.name });
     await bot.api.sendMessage(
@@ -314,7 +326,7 @@ export function attachRelay(bot: Bot, tenantId: string, notify?: (text: string) 
         let lang = existing?.lang ?? "unknown";
         let native = "";
         try {
-          const r = await translateInbound(text, t.nativeLang);
+          const r = await translateInbound(text, t.nativeLang, await chatContext(c.id));
           native = r.native;
           if (lang === "unknown" && r.lang !== "unknown") {
             lang = r.lang;
@@ -380,7 +392,7 @@ export function attachRelay(bot: Bot, tenantId: string, notify?: (text: string) 
     if (text?.startsWith("/")) return; // 客户对 bot 发命令(如 /start)→ 忽略
     if (text) {
       try {
-        const r = await translateInbound(text, t.nativeLang);
+        const r = await translateInbound(text, t.nativeLang, await chatContext(contact.id));
         if (contact.lang === "unknown" && r.lang !== "unknown") await setLang(contact.id, r.lang);
         const shownLang = resolveLang(contact.lang === "unknown" ? r.lang : contact.lang);
         await deliver(`${head}(${shownLang})\n${tr("relay.card_original", t.nativeLang, { text })}\n🌐 ${r.native}\n\n${tr("relay.pc_footer", t.nativeLang, { id: String(contact.id) })} ${tr("relay.lang_switch_hint", t.nativeLang)}`);
@@ -584,7 +596,7 @@ export function attachRelay(bot: Bot, tenantId: string, notify?: (text: string) 
       let lang = existing?.lang ?? "unknown";
       let native = m.text;
       try {
-        const r = await translateInbound(m.text, t.nativeLang);
+        const r = await translateInbound(m.text, t.nativeLang, await chatContext(contact.id));
         native = r.native;
         // 语种首次锁定:短消息易误判,已锁定后不再自动改(用 /lang 手动纠正)
         if (lang === "unknown" && r.lang !== "unknown") {
