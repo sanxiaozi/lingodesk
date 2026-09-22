@@ -1,5 +1,5 @@
 /**
- * AI 客户端:三级翻译引擎链 Claude Haiku(主)→ OpenAI → DeepSeek,带熔断与降级告警。
+ * AI 客户端:三级翻译引擎链(默认 Claude → OpenAI → DeepSeek;PRIMARY_ENGINE 可换主引擎),带熔断与降级告警。
  *
  * 可靠性分层:
  *   · 瞬时抖动 —— Anthropic SDK 自带重试(429/5xx 指数回退 2 次),到这里的失败都是"真失败"。
@@ -96,6 +96,11 @@ const engines: Engine[] = [
   { name: "OpenAI", configured: () => !!openai, call: callOpenAI, fails: 0, openUntil: 0 },
   { name: "DeepSeek", configured: () => !!deepseek, call: callDeepSeek, fails: 0, openUntil: 0 },
 ];
+// PRIMARY_ENGINE 指定主引擎(默认 Claude):命中者提到链首,其余按原序兜底
+{
+  const i = engines.findIndex((e) => e.name.toLowerCase() === config.primaryEngine);
+  if (i > 0) engines.unshift(engines.splice(i, 1)[0]!);
+}
 
 // 降级/恢复告警(main.ts 注入:经门户 bot 私聊管理员;未注入则仅日志)
 let notifyAdmin: ((text: string) => Promise<void>) | undefined;
@@ -103,7 +108,7 @@ export function setEngineNotify(fn: (text: string) => Promise<void>): void {
   notifyAdmin = fn;
 }
 
-let claudeDownNotified = false; // 状态去重:跌出通知一次,恢复通知一次
+let primaryDownNotified = false; // 状态去重:跌出通知一次,恢复通知一次
 
 /** 统一 AI 调用:按链尝试,熔断中的引擎跳过(冷却到点放行探测),全链失败才抛错 */
 export async function complete(system: string, user: string, maxTokens = 2048): Promise<string> {
@@ -116,16 +121,17 @@ export async function complete(system: string, user: string, maxTokens = 2048): 
       e.fails = 0;
       e.openUntil = 0;
       // 主引擎状态变化告警(仅在真正熔断跌出/恢复时各通知一次,避免单次抖动刷屏)
-      if (e.name !== "Claude" && engines[0]!.fails >= TRIP_AFTER && !claudeDownNotified) {
-        claudeDownNotified = true;
-        const msg = `⚠️ 翻译主引擎 Claude 连续失败已熔断,已自动降级到 ${e.name}。恢复后会自动切回并通知你。`;
-        logEvent("system", "engine_failover", `Claude → ${e.name}`);
+      const primary = engines[0]!;
+      if (e !== primary && primary.fails >= TRIP_AFTER && !primaryDownNotified) {
+        primaryDownNotified = true;
+        const msg = `⚠️ 翻译主引擎 ${primary.name} 连续失败已熔断,已自动降级到 ${e.name}。恢复后会自动切回并通知你。`;
+        logEvent("system", "engine_failover", `${primary.name} → ${e.name}`);
         console.warn(msg);
         notifyAdmin?.(msg).catch(() => {});
-      } else if (e.name === "Claude" && claudeDownNotified) {
-        claudeDownNotified = false;
-        const msg = "✅ 翻译主引擎 Claude 已恢复,已自动切回。";
-        logEvent("system", "engine_recovered", "Claude 恢复");
+      } else if (e === primary && primaryDownNotified) {
+        primaryDownNotified = false;
+        const msg = `✅ 翻译主引擎 ${primary.name} 已恢复,已自动切回。`;
+        logEvent("system", "engine_recovered", `${primary.name} 恢复`);
         console.warn(msg);
         notifyAdmin?.(msg).catch(() => {});
       }

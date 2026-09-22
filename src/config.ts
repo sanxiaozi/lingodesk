@@ -26,6 +26,8 @@ export const config = {
   anthropicKey: required("ANTHROPIC_API_KEY"),
   /** 翻译用模型(默认 haiku 省成本) */
   model: process.env.LLM_MODEL || "claude-haiku-4-5",
+  /** 主引擎:claude | openai | deepseek(其余引擎按原序兜底) */
+  primaryEngine: (process.env.PRIMARY_ENGINE || "claude").toLowerCase(),
   /** OpenAI 备用(Claude 调用失败时自动兜底) */
   openaiKey: process.env.OPENAI_API_KEY || undefined,
   openaiModel: process.env.OPENAI_MODEL || "gpt-4o-mini",
