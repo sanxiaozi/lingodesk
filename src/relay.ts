@@ -331,6 +331,10 @@ export function attachRelay(bot: Bot, tenantId: string, notify?: (text: string) 
           if (lang === "unknown" && r.lang !== "unknown") {
             lang = r.lang;
             await setLang(c.id, lang);
+          } else if (r.lang !== "unknown" && r.lang !== lang && text.length >= 20) {
+            // 长消息检测可靠:与锁定语种持续不一致说明当初锁错了(短消息误判),自动纠正
+            lang = r.lang;
+            await setLang(c.id, lang);
           }
         } catch (e) {
           console.error(`[${tenantId}] 门面入站翻译失败,原文落档:`, e);
@@ -393,8 +397,9 @@ export function attachRelay(bot: Bot, tenantId: string, notify?: (text: string) 
     if (text) {
       try {
         const r = await translateInbound(text, t.nativeLang, await chatContext(contact.id));
-        if (contact.lang === "unknown" && r.lang !== "unknown") await setLang(contact.id, r.lang);
-        const shownLang = resolveLang(contact.lang === "unknown" ? r.lang : contact.lang);
+        // 首次锁定;长消息(检测可靠)与锁定不一致时自动纠错
+        if (r.lang !== "unknown" && (contact.lang === "unknown" || (r.lang !== contact.lang && text.length >= 20))) await setLang(contact.id, r.lang);
+        const shownLang = resolveLang(contact.lang === "unknown" || (r.lang !== "unknown" && r.lang !== contact.lang && text.length >= 20) ? r.lang : contact.lang);
         await deliver(`${head}(${shownLang})\n${tr("relay.card_original", t.nativeLang, { text })}\n🌐 ${r.native}\n\n${tr("relay.pc_footer", t.nativeLang, { id: String(contact.id) })} ${tr("relay.lang_switch_hint", t.nativeLang)}`);
         await logMessage({ contactId: contact.id, direction: "in", originalText: text, originalLang: r.lang, nativeText: r.native });
       } catch (e) {
@@ -600,6 +605,10 @@ export function attachRelay(bot: Bot, tenantId: string, notify?: (text: string) 
         native = r.native;
         // 语种首次锁定:短消息易误判,已锁定后不再自动改(用 /lang 手动纠正)
         if (lang === "unknown" && r.lang !== "unknown") {
+          lang = r.lang;
+          await setLang(contact.id, lang);
+        } else if (r.lang !== "unknown" && r.lang !== lang && m.text.length >= 20) {
+          // 长消息检测可靠:与锁定语种不一致说明当初锁错了(短消息误判),自动纠正
           lang = r.lang;
           await setLang(contact.id, lang);
         }

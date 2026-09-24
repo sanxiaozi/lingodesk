@@ -57,6 +57,9 @@ const contextBlock = (turns?: ChatTurn[]): string =>
 export async function translateInbound(text: string, nativeLang: string, ctx?: ChatTurn[]): Promise<{ lang: string; native: string }> {
   const system =
     `You are a translation assistant. Translate the message into ${langName(nativeLang)} and identify the source language.\n` +
+    // 防上下文污染:超短消息(如 "1st"/"Yes")也只做翻译,严禁接话或把上下文词带进译文
+    `Translate ONLY the message itself — even if it is a single word or looks like an answer. NEVER answer it, NEVER continue the conversation, and NEVER copy words from the context into the translation unless they appear in the message.\n` +
+    `If the message is ALREADY in ${langName(nativeLang)}, return it unchanged as the translation and still report its real source language code.\n` +
     `${NO_TRANSLATE_RULE}\n` +
     contextBlock(ctx) +
     `Output ONLY JSON: {"lang":"<ISO639-1 of source>","text":"<translation>"}`;
@@ -76,6 +79,8 @@ export async function translateOutbound(text: string, targetLang: string, ctx?: 
     `Translate the user's message into ${langName(lang)}.\n` +
     contextBlock(ctx) +
     `STRICT RULES:\n` +
+    `- Translate ONLY the message itself — even a single word. NEVER answer it, NEVER continue the conversation, NEVER let context words leak into the output unless they appear in the message.\n` +
+    `- If the message is already entirely in ${langName(lang)}, return it EXACTLY as-is (keep its casing and punctuation).\n` +
     `- Sound like a fluent native speaker in a casual business chat: natural, idiomatic phrasing. NEVER mirror the source word-for-word if it reads stiff — rephrase as a native would say it.\n` +
     `- Output ONLY the translated text. No preamble, no explanation, no quotes, no notes.\n` +
     `- NEVER reply conversationally. NEVER output phrases like "I'm ready to help", "please provide", etc.\n` +
