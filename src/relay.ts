@@ -113,16 +113,36 @@ export function attachRelay(bot: Bot, tenantId: string, notify?: (text: string) 
       tr("relay.preview", t.nativeLang, { lang: targetLang, translated, original: text }),
       {
         message_thread_id: dest.thread,
-        reply_markup: {
-          inline_keyboard: [
-            [
-              { text: tr("relay.btn_send", t.nativeLang), callback_data: `send:${token}` },
-              { text: tr("relay.btn_cancel", t.nativeLang), callback_data: `cancel:${token}` },
-            ],
-          ],
-        },
+        reply_markup: { inline_keyboard: previewKeyboard(token, targetLang, t.nativeLang) },
       },
     );
+  }
+
+  /** 预览卡标准键盘:发送 / 取消 / 🌐语言(点开语言面板,切换后草稿自动重译) */
+  function previewKeyboard(token: number, lang: string, uiLang?: string | null): { text: string; callback_data: string }[][] {
+    return [
+      [
+        { text: tr("relay.btn_send", uiLang), callback_data: `send:${token}` },
+        { text: tr("relay.btn_cancel", uiLang), callback_data: `cancel:${token}` },
+        { text: `🌐 ${lang}`, callback_data: `lsw:${token}` },
+      ],
+    ];
+  }
+
+  // 常用译出语言面板:原生名展示(用户认自己的语言,不用懂语言码)
+  const LANG_PANEL: [string, string][] = [
+    ["en", "English"], ["zh", "中文"], ["hi", "हिन्दी"],
+    ["es", "Español"], ["pt", "Português"], ["ru", "Русский"],
+    ["ar", "العربية"], ["fr", "Français"], ["id", "Indonesia"],
+    ["vi", "Tiếng Việt"], ["th", "ไทย"], ["tr", "Türkçe"],
+  ];
+  function langPanelKeyboard(token: number, uiLang?: string | null): { text: string; callback_data: string }[][] {
+    const rows: { text: string; callback_data: string }[][] = [];
+    for (let i = 0; i < LANG_PANEL.length; i += 3) {
+      rows.push(LANG_PANEL.slice(i, i + 3).map(([code, name]) => ({ text: name, callback_data: `lpk:${token}:${code}` })));
+    }
+    rows.push([{ text: tr("relay.btn_cancel", uiLang), callback_data: `lbk:${token}` }]);
+    return rows;
   }
 
   // 群翻译超额提醒限频(每群最多 6 小时提示一次,防刷屏)
@@ -949,6 +969,44 @@ export function attachRelay(bot: Bot, tenantId: string, notify?: (text: string) 
         ? { chat: Number(t.forumChatId), thread: contact.threadId }
         : { chat: Number(t.ownerUserId || t.id) };
       await startPreview(t, contact, gDest, stray);
+      return;
+    }
+
+    // 预览卡语言切换:lsw 展开语言面板 / lpk 选定(改锁+草稿重译+刷新卡) / lbk 收回
+    if (action === "lsw" || action === "lpk" || action === "lbk") {
+      const token = Number(arg);
+      const p = pendingOut.get(token);
+      const t = await getTenant(tenantId);
+      if (!p || !t) {
+        await ctx.answerCallbackQuery(tr("relay.preview_expired", t?.nativeLang)).catch(() => {});
+        return;
+      }
+      if (action === "lsw") {
+        await ctx.editMessageReplyMarkup({ reply_markup: { inline_keyboard: langPanelKeyboard(token, t.nativeLang) } }).catch(() => {});
+        await ctx.answerCallbackQuery().catch(() => {});
+        return;
+      }
+      if (action === "lbk") {
+        await ctx.editMessageReplyMarkup({ reply_markup: { inline_keyboard: previewKeyboard(token, p.lang, t.nativeLang) } }).catch(() => {});
+        await ctx.answerCallbackQuery().catch(() => {});
+        return;
+      }
+      // lpk:<token>:<code> —— 切换该客户译出语言,当前草稿立即用新语言重译
+      const code = normalizeLangCode(arg2 ?? "");
+      if (!/^[a-z]{2,3}$/.test(code)) return void (await ctx.answerCallbackQuery().catch(() => {}));
+      await ctx.answerCallbackQuery("🌐 …").catch(() => {});
+      try {
+        const retranslated = await translateOutbound(p.original, code, await chatContext(p.contactId));
+        await setLang(p.contactId, code);
+        p.lang = code;
+        p.translated = retranslated;
+        await ctx.editMessageText(tr("relay.preview", t.nativeLang, { lang: code, translated: retranslated, original: p.original }), {
+          reply_markup: { inline_keyboard: previewKeyboard(token, code, t.nativeLang) },
+        }).catch(() => {});
+      } catch (e) {
+        console.error(`[${tenantId}] 预览卡切语言重译失败:`, e);
+        await ctx.editMessageReplyMarkup({ reply_markup: { inline_keyboard: previewKeyboard(token, p.lang, t.nativeLang) } }).catch(() => {});
+      }
       return;
     }
 
